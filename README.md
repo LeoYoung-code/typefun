@@ -23,7 +23,7 @@
 cd /Users/staff/project/AI/typefun
 pnpm install
 pnpm dev          # 并行启动 API(8787) + Web(5173)
-pnpm test         # typing-core 单测
+pnpm test         # typing-core + apps/api（Vitest / fastify.inject）
 ```
 
 浏览器打开：**http://127.0.0.1:5173/**（需 `pnpm dev` 同时起 API，否则首页会提示载入失败）。

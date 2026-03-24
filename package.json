@@ -7,7 +7,7 @@
     "dev:api": "pnpm --filter @typefun/api dev",
     "dev:web": "pnpm --filter @typefun/web dev",
     "build": "pnpm run -r build",
-    "test": "pnpm --filter @typefun/typing-core test"
+    "test": "pnpm --filter @typefun/typing-core test && pnpm --filter @typefun/api test"
   },
   "engines": {
     "node": ">=20"
