@@ -41,6 +41,8 @@ body {
   font-size: 22px;
   font-weight: 700;
   letter-spacing: 0.5px;
+  color: inherit;
+  text-decoration: none;
 }
 
 .top-actions {
@@ -56,6 +58,7 @@ body {
   padding: 8px 14px;
   border-radius: 10px;
   cursor: pointer;
+  min-height: 44px;
 }
 
 .primary-btn {
@@ -63,8 +66,10 @@ body {
   border-color: #36498e;
 }
 
-.view.hidden {
-  display: none;
+.ghost-btn:focus-visible,
+.primary-btn:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 .title {
@@ -74,6 +79,12 @@ body {
 
 .subtitle {
   margin: 0 0 22px;
+  color: var(--muted);
+}
+
+.hint-kbd {
+  margin-top: 8px;
+  font-size: 13px;
   color: var(--muted);
 }
 
@@ -87,10 +98,6 @@ body {
   align-items: center;
   margin-bottom: 18px;
   gap: 12px;
-}
-
-.continue-box.hidden {
-  display: none;
 }
 
 .continue-text {
@@ -304,8 +311,18 @@ body {
   pointer-events: none;
 }
 
+.load-error {
+  border: 1px solid var(--err);
+  border-radius: 12px;
+  padding: 16px;
+  color: var(--text);
+  background: rgba(240, 109, 127, 0.12);
+}
+
 @media (max-width: 980px) {
-  :root { --cell-gap: 0.24em; }
+  :root {
+    --cell-gap: 0.24em;
+  }
   .course-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -318,7 +335,9 @@ body {
 }
 
 @media (max-width: 640px) {
-  :root { --cell-gap: 0.18em; }
+  :root {
+    --cell-gap: 0.18em;
+  }
   .title {
     font-size: 34px;
   }
@@ -333,5 +352,15 @@ body {
   }
   .hz-cell {
     font-size: 34px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

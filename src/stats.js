@@ -25,3 +25,10 @@ export function formatPercent(num) {
 export function formatRate(num, unit) {
   return `${Math.max(0, num).toFixed(0)} ${unit}`;
 }
+
+export function formatDuration(seconds) {
+  const s = Math.max(0, Math.floor(seconds));
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m}:${r.toString().padStart(2, "0")}`;
+}

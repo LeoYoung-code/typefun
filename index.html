@@ -36,6 +36,7 @@
         <div id="typing-panel" class="typing-panel"></div>
 
         <div class="footer-stats">
+          <span>用时 <b id="stat-elapsed">0:00</b></span>
           <span>准确率 <b id="stat-accuracy">0%</b></span>
           <span>按键速度 <b id="stat-kpm">0 键/分钟</b></span>
           <span>打字速度 <b id="stat-cpm">0 字/分钟</b></span>
@@ -45,6 +46,15 @@
       </section>
     </main>
   </div>
+
+  <dialog id="finish-dialog" class="finish-dialog" aria-labelledby="finish-dialog-title">
+    <div class="finish-dialog-inner">
+      <h3 id="finish-dialog-title" class="finish-dialog-title">练习完成</h3>
+      <p id="finish-dialog-summary" class="finish-dialog-summary"></p>
+      <p id="finish-dialog-stars" class="finish-dialog-stars" aria-live="polite"></p>
+      <button type="button" id="finish-dialog-close" class="primary-btn finish-dialog-btn">回到课程</button>
+    </div>
+  </dialog>
 
   <input
     id="ime-input"

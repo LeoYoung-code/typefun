@@ -1,0 +1,15 @@
+{
+  "name": "typefun",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev": "pnpm run --parallel dev:api dev:web",
+    "dev:api": "pnpm --filter @typefun/api dev",
+    "dev:web": "pnpm --filter @typefun/web dev",
+    "build": "pnpm run -r build",
+    "test": "pnpm --filter @typefun/typing-core test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

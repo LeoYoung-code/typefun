@@ -1,6 +1,6 @@
 import { poems } from "../data/poems.js";
 import { flattenPoem } from "./pinyin.js";
-import { calcStats, formatPercent, formatRate } from "./stats.js";
+import { calcStats, formatDuration, formatPercent, formatRate } from "./stats.js";
 import { loadState, saveState, clearProgress } from "./storage.js";
 
 const els = {
@@ -16,11 +16,16 @@ const els = {
   practiceAuthor: document.getElementById("practice-author"),
   typingPanel: document.getElementById("typing-panel"),
   imeInput: document.getElementById("ime-input"),
+  statElapsed: document.getElementById("stat-elapsed"),
   statAccuracy: document.getElementById("stat-accuracy"),
   statKpm: document.getElementById("stat-kpm"),
   statCpm: document.getElementById("stat-cpm"),
   statCorrectCpm: document.getElementById("stat-correct-cpm"),
-  statProgress: document.getElementById("stat-progress")
+  statProgress: document.getElementById("stat-progress"),
+  finishDialog: document.getElementById("finish-dialog"),
+  finishDialogSummary: document.getElementById("finish-dialog-summary"),
+  finishDialogStars: document.getElementById("finish-dialog-stars"),
+  finishDialogClose: document.getElementById("finish-dialog-close")
 };
 
 const state = {
@@ -66,11 +71,22 @@ function bindEvents() {
     startPractice(id, true);
   });
 
+  els.finishDialogClose.addEventListener("click", () => {
+    els.finishDialog.close();
+  });
+
   window.addEventListener("keydown", () => {
     if (!state.currentPoem) return;
     focusInput();
   });
   window.addEventListener("keydown", (ev) => {
+    if (ev.key === "Escape" && !els.finishDialog.open) {
+      if (!state.currentPoem) return;
+      if (els.practiceView.classList.contains("hidden")) return;
+      ev.preventDefault();
+      showCourse();
+      return;
+    }
     if (!state.currentPoem) return;
     if (ev.key === "Backspace") {
       ev.preventDefault();
@@ -287,7 +303,10 @@ function finishPoem(totalChars) {
   renderCourse();
   showContinueIfAny();
   showCourse();
-  alert(`完成《${state.currentPoem.title}》\n准确率 ${formatPercent(stats.accuracy)} · 速度 ${formatRate(stats.cpm, "字/分钟")} · 星级 ${"★".repeat(stars)}`);
+  const elapsedSec = (Date.now() - state.metrics.startedAt) / 1000;
+  els.finishDialogSummary.textContent = `《${state.currentPoem.title}》\n准确率 ${formatPercent(stats.accuracy)} · 速度 ${formatRate(stats.cpm, "字/分钟")} · 用时 ${formatDuration(elapsedSec)}`;
+  els.finishDialogStars.textContent = `${"★".repeat(stars)}${"☆".repeat(5 - stars)}`;
+  els.finishDialog.showModal();
 }
 
 function saveProgress(totalChars) {
@@ -423,6 +442,8 @@ function renderStats() {
   if (!state.currentPoem) return;
   const totalChars = state.units.filter((u) => !u.isPunctuation).length;
   const stats = calcStats(state.metrics, totalChars);
+  const elapsedSec = (Date.now() - state.metrics.startedAt) / 1000;
+  els.statElapsed.textContent = formatDuration(elapsedSec);
   els.statAccuracy.textContent = formatPercent(stats.accuracy);
   els.statKpm.textContent = formatRate(stats.kpm, "键/分钟");
   els.statCpm.textContent = formatRate(stats.cpm, "字/分钟");

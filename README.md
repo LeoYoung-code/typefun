@@ -1,24 +1,38 @@
-# Typefun MVP
+# Typefun
 
-一个面向长期自用的古诗词打字练习网页应用 MVP。
+古诗词拼音打字练习（长期自用）。仓库内同时保留 **静态 MVP**（`index.html`）与 **设计文档中的 Vue + Node MVS**（monorepo）。
 
-## 已实现
+## 已实现（静态 MVP）
 
-- 课程页（卡片列表、锁定态、星级展示）
-- 练习页（拼音/汉字双行、当前字高亮、错误反馈）
-- 核心输入状态机（英文拼音输入 + 中文 IME 合成输入）
-- 实时统计（准确率、按键速度、打字速度、正确速度、进度）
-- 自动保存与续练（localStorage）
+- 课程页、练习页、IME 合成门禁、统计、localStorage 续练、完成 `<dialog>`  
+- 本地运行：`python3 -m http.server 4173` → `http://127.0.0.1:4173/index.html`
 
-## 本地运行
+## Vue + Node（Phase 1 / MVS）
 
-推荐用静态服务器打开（避免浏览器对 `file://` 模块加载限制）：
+- **`packages/typing-core`**：拼音规范化、`flattenPoem`、练习状态机（`applyPracticeKey`）、统计与星级；**Vitest** 单测。  
+- **`apps/api`**：Fastify，`GET /api/health`、`/api/poems`、`/api/poems/:id`，数据来自 `data/poems.json`。  
+- **`apps/web`**：Vue 3 + Vue Router + Vite，开发时代理 `/api` → `127.0.0.1:8787`。完成结算经 `sessionStorage` 回到首页弹窗（避免路由卸载丢 `<dialog>`）。
+
+### 前置
+
+- Node **≥ 20**、[pnpm](https://pnpm.io) 9+
+
+### 命令
 
 ```bash
 cd /Users/staff/project/AI/typefun
-python3 -m http.server 4173
+pnpm install
+pnpm dev          # 并行启动 API(8787) + Web(5173)
+pnpm test         # typing-core 单测
 ```
 
-浏览器访问：
+浏览器打开：**http://127.0.0.1:5173/**（需 `pnpm dev` 同时起 API，否则首页会提示载入失败）。
 
-`http://127.0.0.1:4173/index.html`
+### 数据说明
+
+- `data/poems.json` 与 `data/poems.js` 当前内容一致；静态 MVP 仍读 `.js`，全栈读 `.json`。后续可改为代码生成或单一数据源。
+
+## 文档
+
+- 全栈方案与 UI 规格：`docs/technical-design-vue-node.md`  
+- 调研报告：`docs/Typefun-gemini.pdf`
