@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import type { Poem } from "@typefun/typing-core";
-import { formatPercent } from "@typefun/typing-core";
+import type { Poem, PoemCategory } from "@typefun/typing-core";
+import { POEM_CATEGORY_LABELS, formatPercent } from "@typefun/typing-core";
 
 import { loadState, type SavedState } from "../lib/storage";
 
@@ -81,6 +81,29 @@ function continuePractice() {
   const id = saved.value.lastPoemId;
   if (id) startPractice(id);
 }
+
+const CATEGORY_ORDER: PoemCategory[] = ["tang", "song_ci"];
+
+function resolveCategory(p: Poem): PoemCategory {
+  return p.category ?? "tang";
+}
+
+const poemSections = computed(() => {
+  const list = poems.value;
+  if (!list?.length) return [];
+  const by = new Map<PoemCategory, Poem[]>();
+  for (const c of CATEGORY_ORDER) by.set(c, []);
+  for (const p of list) {
+    const c = resolveCategory(p);
+    if (!by.has(c)) by.set(c, []);
+    by.get(c)!.push(p);
+  }
+  return CATEGORY_ORDER.filter((c) => (by.get(c) ?? []).length > 0).map((c) => ({
+    key: c,
+    label: POEM_CATEGORY_LABELS[c],
+    items: by.get(c) ?? []
+  }));
+});
 </script>
 
 <template>
@@ -90,8 +113,8 @@ function continuePractice() {
   </header>
 
   <main>
-    <h1 class="title">经典唐诗必背</h1>
-    <p class="subtitle">Vue + Node（MVS）· 打开即练</p>
+    <h1 class="title">经典古诗词</h1>
+    <p class="subtitle">Vue + Node（MVS）· 唐诗与宋词 · 打开即练</p>
 
     <div v-if="loadError" class="load-error">
       <p>{{ loadError }}</p>
@@ -106,29 +129,36 @@ function continuePractice() {
         </button>
       </div>
 
-      <div class="course-grid">
-        <article
-          v-for="poem in poems"
-          :key="poem.id"
-          class="course-card"
-        >
-          <div class="course-card-top">
-            <span>{{ renderStars(saved.bestByPoem[poem.id]?.stars ?? poem.stars ?? 0) }}</span>
-            <span>可练习</span>
-          </div>
-          <div>
-            <div class="course-card-title">《{{ poem.title }}》</div>
-            <div class="course-card-author">{{ poem.author }}</div>
-          </div>
-          <button
-            type="button"
-            class="primary-btn"
-            @click="startPractice(poem.id)"
+      <section
+        v-for="section in poemSections"
+        :key="section.key"
+        class="poem-section"
+      >
+        <h2 class="poem-section-title">{{ section.label }}</h2>
+        <div class="course-grid">
+          <article
+            v-for="poem in section.items"
+            :key="poem.id"
+            class="course-card"
           >
-            开始练习
-          </button>
-        </article>
-      </div>
+            <div class="course-card-top">
+              <span>{{ renderStars(saved.bestByPoem[poem.id]?.stars ?? poem.stars ?? 0) }}</span>
+              <span>可练习</span>
+            </div>
+            <div>
+              <div class="course-card-title">《{{ poem.title }}》</div>
+              <div class="course-card-author">{{ poem.author }}</div>
+            </div>
+            <button
+              type="button"
+              class="primary-btn"
+              @click="startPractice(poem.id)"
+            >
+              开始练习
+            </button>
+          </article>
+        </div>
+      </section>
     </template>
 
     <p v-else class="subtitle">载入诗词…</p>

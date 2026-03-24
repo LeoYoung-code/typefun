@@ -3,10 +3,17 @@ import { flattenPoem } from "./pinyin.js";
 import { calcStats, formatDuration, formatPercent, formatRate } from "./stats.js";
 import { loadState, saveState, clearProgress } from "./storage.js";
 
+const CATEGORY_ORDER = ["tang", "song_ci"];
+const CATEGORY_LABEL = { tang: "唐诗", song_ci: "宋词" };
+
+function poemCategory(poem) {
+  return poem.category ?? "tang";
+}
+
 const els = {
   courseView: document.getElementById("course-view"),
   practiceView: document.getElementById("practice-view"),
-  courseGrid: document.getElementById("course-grid"),
+  courseSections: document.getElementById("course-sections"),
   continueBox: document.getElementById("continue-box"),
   continueText: document.getElementById("continue-text"),
   btnContinue: document.getElementById("btn-continue"),
@@ -14,6 +21,7 @@ const els = {
   btnRestart: document.getElementById("btn-restart"),
   practiceTitle: document.getElementById("practice-title"),
   practiceAuthor: document.getElementById("practice-author"),
+  practiceGenre: document.getElementById("practice-genre"),
   typingPanel: document.getElementById("typing-panel"),
   imeInput: document.getElementById("ime-input"),
   statElapsed: document.getElementById("stat-elapsed"),
@@ -142,13 +150,32 @@ function focusInput() {
 }
 
 function renderCourse() {
-  els.courseGrid.innerHTML = "";
+  els.courseSections.innerHTML = "";
+  const by = new Map();
+  for (const c of CATEGORY_ORDER) by.set(c, []);
   for (const poem of poems) {
-    const card = document.createElement("article");
-    card.className = "course-card";
-    const best = state.saved.bestByPoem[poem.id];
-    const stars = best?.stars ?? poem.stars ?? 0;
-    card.innerHTML = `
+    const c = poemCategory(poem);
+    if (!by.has(c)) by.set(c, []);
+    by.get(c).push(poem);
+  }
+  for (const c of CATEGORY_ORDER) {
+    const items = by.get(c) ?? [];
+    if (!items.length) continue;
+    const section = document.createElement("section");
+    section.className = "poem-section";
+    const h = document.createElement("h2");
+    h.className = "poem-section-title";
+    h.textContent = CATEGORY_LABEL[c];
+    const grid = document.createElement("div");
+    grid.className = "course-grid";
+    section.appendChild(h);
+    section.appendChild(grid);
+    for (const poem of items) {
+      const card = document.createElement("article");
+      card.className = "course-card";
+      const best = state.saved.bestByPoem[poem.id];
+      const stars = best?.stars ?? poem.stars ?? 0;
+      card.innerHTML = `
       <div class="course-card-top">
         <span>${renderStars(stars)}</span>
         <span>可练习</span>
@@ -159,13 +186,15 @@ function renderCourse() {
       </div>
     `;
 
-    const btn = document.createElement("button");
-    btn.className = "primary-btn";
-    btn.textContent = "开始练习";
-    btn.disabled = false;
-    btn.addEventListener("click", () => startPractice(poem.id, true));
-    card.appendChild(btn);
-    els.courseGrid.appendChild(card);
+      const btn = document.createElement("button");
+      btn.className = "primary-btn";
+      btn.textContent = "开始练习";
+      btn.disabled = false;
+      btn.addEventListener("click", () => startPractice(poem.id, true));
+      card.appendChild(btn);
+      grid.appendChild(card);
+    }
+    els.courseSections.appendChild(section);
   }
 }
 
@@ -221,6 +250,7 @@ function startPractice(poemId, restore = true) {
   refreshTypingStatus();
   els.practiceTitle.textContent = `《${poem.title}》`;
   els.practiceAuthor.textContent = poem.author;
+  els.practiceGenre.textContent = CATEGORY_LABEL[poemCategory(poem)];
   renderTypingPanel();
   renderStats();
   showPractice();

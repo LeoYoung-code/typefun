@@ -3,10 +3,20 @@ export type PoemLine = {
   pinyin: string[];
 };
 
+/** 体裁：与 `data/poems.json` 中 `category` 字段一致 */
+export type PoemCategory = "tang" | "song_ci";
+
+export const POEM_CATEGORY_LABELS: Record<PoemCategory, string> = {
+  tang: "唐诗",
+  song_ci: "宋词"
+};
+
 export type Poem = {
   id: string;
   title: string;
   author: string;
+  /** 未标注时视为唐诗（兼容旧数据与测试夹具） */
+  category?: PoemCategory;
   stars?: number;
   unlocked?: boolean;
   lines: PoemLine[];

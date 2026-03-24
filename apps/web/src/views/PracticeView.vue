@@ -9,10 +9,12 @@ import {
   formatRate,
   isPracticeComplete,
   scoreToStars,
+  POEM_CATEGORY_LABELS,
   type Poem,
+  type PoemCategory,
   type PracticeState
 } from "@typefun/typing-core";
-import { nextTick, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
 import TypingPanel from "../components/TypingPanel.vue";
@@ -25,6 +27,15 @@ const poem = ref<Poem | null>(null);
 const loadError = ref<string | null>(null);
 const practice = ref<PracticeState | null>(null);
 const saved = ref(loadState());
+
+function resolveCategory(c?: PoemCategory): PoemCategory {
+  return c ?? "tang";
+}
+
+const practiceGenreLabel = computed(() => {
+  if (!poem.value) return "";
+  return POEM_CATEGORY_LABELS[resolveCategory(poem.value.category)];
+});
 
 const imeInput = ref<HTMLInputElement | null>(null);
 const composing = ref(false);
@@ -253,6 +264,7 @@ watch(
       <div class="practice-header">
         <h2>《{{ poem.title }}》</h2>
         <p class="practice-author">{{ poem.author }}</p>
+        <p class="practice-genre">{{ practiceGenreLabel }}</p>
       </div>
 
       <TypingPanel

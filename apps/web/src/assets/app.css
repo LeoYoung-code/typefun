@@ -82,6 +82,22 @@ body {
   color: var(--muted);
 }
 
+.poem-section {
+  margin-bottom: 28px;
+}
+
+.poem-section:last-child {
+  margin-bottom: 0;
+}
+
+.poem-section-title {
+  margin: 0 0 12px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
 .hint-kbd {
   margin-top: 8px;
   font-size: 13px;
@@ -156,6 +172,12 @@ body {
 
 .practice-author {
   margin: 6px 0 0;
+  color: var(--muted);
+}
+
+.practice-genre {
+  margin: 4px 0 0;
+  font-size: 13px;
   color: var(--muted);
 }
 
