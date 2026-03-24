@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Typefun MVP</title>
+  <link rel="stylesheet" href="./styles/app.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="logo">Typefun</div>
+      <div class="top-actions">
+        <button id="btn-course" class="ghost-btn">课程页</button>
+        <button id="btn-restart" class="ghost-btn">重打</button>
+      </div>
+    </header>
+
+    <main>
+      <section id="course-view" class="view">
+        <h1 class="title">经典唐诗必背</h1>
+        <p class="subtitle">长期自用 MVP · 打开即练</p>
+        <div id="continue-box" class="continue-box hidden">
+          <div class="continue-text" id="continue-text"></div>
+          <button id="btn-continue" class="primary-btn">继续上次练习</button>
+        </div>
+        <div id="course-grid" class="course-grid"></div>
+      </section>
+
+      <section id="practice-view" class="view hidden">
+        <div class="practice-header">
+          <h2 id="practice-title"></h2>
+          <p id="practice-author" class="practice-author"></p>
+        </div>
+
+        <div id="typing-panel" class="typing-panel"></div>
+
+        <div class="footer-stats">
+          <span>准确率 <b id="stat-accuracy">0%</b></span>
+          <span>按键速度 <b id="stat-kpm">0 键/分钟</b></span>
+          <span>打字速度 <b id="stat-cpm">0 字/分钟</b></span>
+          <span>正确打字速度 <b id="stat-correct-cpm">0 字/分钟</b></span>
+          <span>进度 <b id="stat-progress">0%</b></span>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <input
+    id="ime-input"
+    class="ime-input"
+    type="text"
+    autocapitalize="off"
+    autocomplete="off"
+    autocorrect="off"
+    spellcheck="false"
+  />
+
+  <script type="module" src="./src/app.js"></script>
+</body>
+</html>
