@@ -58,7 +58,7 @@ export const poems = [
     title: "春晓",
     author: "唐 · 孟浩然",
     stars: 0,
-    unlocked: false,
+    unlocked: true,
     lines: [
       {
         hanzi: ["春", "眠", "不", "觉", "晓", "，"],

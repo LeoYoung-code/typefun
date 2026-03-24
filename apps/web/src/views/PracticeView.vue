@@ -261,6 +261,7 @@ watch(
         :cursor="practice.cursor"
         :typed-buffer="practice.typedBuffer"
         :current-error="practice.currentError"
+        :failed-snapshots="practice.failedSnapshots"
       />
 
       <div class="footer-stats" aria-live="polite">

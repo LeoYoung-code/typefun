@@ -31,6 +31,8 @@ export type Metrics = {
 export type PracticeProgress = {
   cursor: number;
   typedBuffer: string;
+  /** 整字已打完但含错键：unit 下标 → 该字全部按键序列（逐字母着色） */
+  failedSnapshots?: Record<string, string>;
   totalKeyCount: number;
   correctKeyCount: number;
   correctCharCount: number;
@@ -45,5 +47,6 @@ export type PracticeState = {
   cursor: number;
   typedBuffer: string;
   currentError: boolean;
+  failedSnapshots: Record<string, string>;
   metrics: Metrics;
 };

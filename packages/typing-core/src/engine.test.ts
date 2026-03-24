@@ -50,10 +50,13 @@ describe("applyPracticeKey", () => {
     expect(s.typedBuffer).toBe("");
   });
 
-  it("marks error on wrong letter", () => {
+  it("wrong letter stays on unit and moves to next letter slot", () => {
     let s = createPracticeState(mini, null, 1_000_000);
     s = applyPracticeKey(s, "x", 1_000_000);
+    expect(s.cursor).toBe(0);
+    expect(s.typedBuffer).toBe("x");
     expect(s.currentError).toBe(true);
+    expect(s.failedSnapshots["0"]).toBeUndefined();
   });
 
   it("backspace shrinks buffer", () => {
@@ -62,6 +65,25 @@ describe("applyPracticeKey", () => {
     s = applyPracticeKey(s, "backspace", 1_000_000);
     expect(s.typedBuffer).toBe("");
     expect(s.currentError).toBe(false);
+  });
+
+  it("backspace after wrong letter clears buffer on same unit", () => {
+    let s = createPracticeState(mini, null, 1_000_000);
+    s = applyPracticeKey(s, "x", 1_000_000);
+    expect(s.cursor).toBe(0);
+    s = applyPracticeKey(s, "backspace", 1_000_000);
+    expect(s.cursor).toBe(0);
+    expect(s.typedBuffer).toBe("");
+    expect(s.failedSnapshots["0"]).toBeUndefined();
+  });
+
+  it("stores failed snapshot when syllable completes with a wrong key", () => {
+    let s = createPracticeState(mini, null, 1_000_000);
+    for (const ch of "xhuang") {
+      s = applyPracticeKey(s, ch, 1_000_000);
+    }
+    expect(s.failedSnapshots["0"]).toBe("xhuang");
+    expect(s.cursor).toBeGreaterThan(0);
   });
 });
 

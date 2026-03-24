@@ -8,6 +8,7 @@ const props = defineProps<{
   cursor: number;
   typedBuffer: string;
   currentError: boolean;
+  failedSnapshots: Record<string, string>;
 }>();
 
 const lineStarts = computed(() => {
@@ -43,6 +44,30 @@ function pyLetters(expectedRaw: string, typedBuffer: string) {
   }
   return items;
 }
+
+/** 已完成字含错键：逐字母着色；快照较短时剩余字母按绿色展示 */
+function pyLettersFailed(expectedRaw: string, failTyped: string) {
+  const expected = expectedRaw || "";
+  const items: { ch: string; cls: string }[] = [];
+  for (let i = 0; i < expected.length; i += 1) {
+    if (i < failTyped.length) {
+      const t = failTyped[i];
+      const e = expected[i];
+      items.push({
+        ch: t === e ? e : t,
+        cls: t === e ? "ok" : "err"
+      });
+    } else {
+      items.push({ ch: expected[i], cls: "ok" });
+    }
+  }
+  if (failTyped.length > expected.length) {
+    for (let i = expected.length; i < failTyped.length; i += 1) {
+      items.push({ ch: failTyped[i], cls: "err" });
+    }
+  }
+  return items;
+}
 </script>
 
 <template>
@@ -69,13 +94,32 @@ function pyLetters(expectedRaw: string, typedBuffer: string) {
               punct: units[lineStarts[lineIndex] + idx].isPunctuation,
               done:
                 lineStarts[lineIndex] + idx < cursor &&
-                !units[lineStarts[lineIndex] + idx].isPunctuation,
+                !units[lineStarts[lineIndex] + idx].isPunctuation &&
+                failedSnapshots[String(lineStarts[lineIndex] + idx)] === undefined,
               current: lineStarts[lineIndex] + idx === cursor,
               error: lineStarts[lineIndex] + idx === cursor && currentError
             }"
           >
             <template
               v-if="
+                lineStarts[lineIndex] + idx < cursor &&
+                !units[lineStarts[lineIndex] + idx].isPunctuation &&
+                failedSnapshots[String(lineStarts[lineIndex] + idx)] !== undefined
+              "
+            >
+              <span
+                v-for="(pl, pi) in pyLettersFailed(
+                  units[lineStarts[lineIndex] + idx].pinyinRaw,
+                  failedSnapshots[String(lineStarts[lineIndex] + idx)]!
+                )"
+                :key="pi"
+                class="py-letter"
+                :class="pl.cls"
+                >{{ pl.ch }}</span
+              >
+            </template>
+            <template
+              v-else-if="
                 lineStarts[lineIndex] + idx === cursor &&
                 !units[lineStarts[lineIndex] + idx].isPunctuation
               "
@@ -101,9 +145,14 @@ function pyLetters(expectedRaw: string, typedBuffer: string) {
               punct: units[lineStarts[lineIndex] + idx].isPunctuation,
               done:
                 lineStarts[lineIndex] + idx < cursor &&
-                !units[lineStarts[lineIndex] + idx].isPunctuation,
+                !units[lineStarts[lineIndex] + idx].isPunctuation &&
+                failedSnapshots[String(lineStarts[lineIndex] + idx)] === undefined,
               current: lineStarts[lineIndex] + idx === cursor,
-              error: lineStarts[lineIndex] + idx === cursor && currentError
+              error:
+                (lineStarts[lineIndex] + idx === cursor && currentError) ||
+                (lineStarts[lineIndex] + idx < cursor &&
+                  !units[lineStarts[lineIndex] + idx].isPunctuation &&
+                  failedSnapshots[String(lineStarts[lineIndex] + idx)] !== undefined)
             }"
             >{{ char }}</span
           >

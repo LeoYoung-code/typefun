@@ -10,6 +10,13 @@ function skipPunctuationUnits(units: Unit[], cursor: number): number {
   return c;
 }
 
+function syllableHasErrorSoFar(typedBuffer: string, expectedRaw: string): boolean {
+  for (let i = 0; i < typedBuffer.length; i += 1) {
+    if (typedBuffer[i] !== expectedRaw[i]) return true;
+  }
+  return false;
+}
+
 function refreshTypingError(state: PracticeState): PracticeState {
   const current = state.units[state.cursor];
   if (!current || current.isPunctuation) {
@@ -18,7 +25,7 @@ function refreshTypingError(state: PracticeState): PracticeState {
   if (!state.typedBuffer) {
     return { ...state, currentError: false };
   }
-  const currentError = !current.pinyinRaw.startsWith(state.typedBuffer);
+  const currentError = syllableHasErrorSoFar(state.typedBuffer, current.pinyinRaw);
   return { ...state, currentError };
 }
 
@@ -48,12 +55,18 @@ export function createPracticeState(
   let typedBuffer = restore ? restore.typedBuffer || "" : "";
   cursor = skipPunctuationUnits(units, cursor);
 
+  const failedSnapshots: Record<string, string> =
+    restore?.failedSnapshots && typeof restore.failedSnapshots === "object"
+      ? { ...restore.failedSnapshots }
+      : {};
+
   let state: PracticeState = {
     poem,
     units,
     cursor,
     typedBuffer,
     currentError: false,
+    failedSnapshots,
     metrics
   };
   state = refreshTypingError(state);
@@ -73,10 +86,6 @@ export function applyPracticeKey(
   now: number
 ): PracticeState {
   const lower = key.toLowerCase();
-  const current = state.units[state.cursor];
-  if (!current || current.isPunctuation) {
-    return state;
-  }
 
   if (lower === "backspace") {
     if (state.typedBuffer.length > 0) {
@@ -90,6 +99,20 @@ export function applyPracticeKey(
       }
       const prev = state.units[newCursor];
       if (prev && !prev.isPunctuation) {
+        const prevKey = String(newCursor);
+        const failSnap = state.failedSnapshots[prevKey];
+        if (failSnap !== undefined) {
+          const nextFailed = { ...state.failedSnapshots };
+          delete nextFailed[prevKey];
+          const typedBuffer = failSnap.length <= 1 ? "" : failSnap.slice(0, -1);
+          return refreshTypingError({
+            ...state,
+            cursor: newCursor,
+            typedBuffer,
+            failedSnapshots: nextFailed,
+            currentError: false
+          });
+        }
         const typedBuffer = prev.pinyinRaw.slice(0, -1);
         const metrics = bumpMetrics(state.metrics, {
           correctCharCount: Math.max(0, state.metrics.correctCharCount - 1)
@@ -106,46 +129,59 @@ export function applyPracticeKey(
     return state;
   }
 
+  const current = state.units[state.cursor];
+  if (!current || current.isPunctuation) {
+    return state;
+  }
+
   if (!/^[a-z]$/.test(lower)) {
     return state;
   }
 
-  let metrics = bumpMetrics(state.metrics, {
+  const metrics = bumpMetrics(state.metrics, {
     totalKeyCount: state.metrics.totalKeyCount + 1
   });
-  let typedBuffer = state.typedBuffer + lower;
+  const typedBuffer = state.typedBuffer + lower;
   const expectedRaw = current.pinyinRaw;
+  const pos = typedBuffer.length - 1;
+  const keyOk = pos < expectedRaw.length && lower === expectedRaw[pos];
 
-  if (expectedRaw.startsWith(typedBuffer)) {
-    metrics = bumpMetrics(metrics, {
-      correctKeyCount: metrics.correctKeyCount + 1
-    });
-    let cursor = state.cursor;
-    if (typedBuffer.length >= expectedRaw.length) {
-      cursor += 1;
-      metrics = bumpMetrics(metrics, {
-        correctCharCount: metrics.correctCharCount + 1
+  let nextMetrics = keyOk
+    ? bumpMetrics(metrics, { correctKeyCount: metrics.correctKeyCount + 1 })
+    : bumpMetrics(metrics, { errorCount: metrics.errorCount + 1 });
+
+  if (typedBuffer.length >= expectedRaw.length) {
+    let cursor = state.cursor + 1;
+    cursor = skipPunctuationUnits(state.units, cursor);
+    let failedSnapshots = { ...state.failedSnapshots };
+    let allOk = true;
+    for (let i = 0; i < expectedRaw.length; i += 1) {
+      if (typedBuffer[i] !== expectedRaw[i]) {
+        allOk = false;
+        break;
+      }
+    }
+    if (allOk) {
+      nextMetrics = bumpMetrics(nextMetrics, {
+        correctCharCount: nextMetrics.correctCharCount + 1
       });
-      typedBuffer = "";
-      cursor = skipPunctuationUnits(state.units, cursor);
+    } else {
+      failedSnapshots[String(state.cursor)] = typedBuffer;
     }
     return refreshTypingError({
       ...state,
       cursor,
-      typedBuffer,
-      metrics,
+      typedBuffer: "",
+      metrics: nextMetrics,
+      failedSnapshots,
       currentError: false
     });
   }
 
-  metrics = bumpMetrics(metrics, {
-    errorCount: metrics.errorCount + 1
-  });
   return refreshTypingError({
     ...state,
     typedBuffer,
-    metrics,
-    currentError: true
+    metrics: nextMetrics
   });
 }
 
@@ -162,6 +198,7 @@ export function buildProgressSnapshot(
   return {
     cursor: state.cursor,
     typedBuffer: state.typedBuffer,
+    failedSnapshots: { ...state.failedSnapshots },
     totalKeyCount: state.metrics.totalKeyCount,
     correctKeyCount: state.metrics.correctKeyCount,
     correctCharCount: state.metrics.correctCharCount,

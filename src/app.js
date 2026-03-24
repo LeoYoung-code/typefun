@@ -35,6 +35,7 @@ const state = {
   cursor: 0,
   typedBuffer: "",
   currentError: false,
+  failedSnapshots: {},
   composing: false,
   metrics: {
     startedAt: Date.now(),
@@ -144,13 +145,13 @@ function renderCourse() {
   els.courseGrid.innerHTML = "";
   for (const poem of poems) {
     const card = document.createElement("article");
-    card.className = `course-card ${poem.unlocked ? "" : "locked"}`;
+    card.className = "course-card";
     const best = state.saved.bestByPoem[poem.id];
     const stars = best?.stars ?? poem.stars ?? 0;
     card.innerHTML = `
       <div class="course-card-top">
         <span>${renderStars(stars)}</span>
-        <span>${poem.unlocked ? "可练习" : "🔒 未解锁"}</span>
+        <span>可练习</span>
       </div>
       <div>
         <div class="course-card-title">《${poem.title}》</div>
@@ -160,8 +161,8 @@ function renderCourse() {
 
     const btn = document.createElement("button");
     btn.className = "primary-btn";
-    btn.textContent = poem.unlocked ? "开始练习" : "已锁定";
-    btn.disabled = !poem.unlocked;
+    btn.textContent = "开始练习";
+    btn.disabled = false;
     btn.addEventListener("click", () => startPractice(poem.id, true));
     card.appendChild(btn);
     els.courseGrid.appendChild(card);
@@ -196,6 +197,10 @@ function startPractice(poemId, restore = true) {
   state.cursor = restore && savedProgress ? savedProgress.cursor : 0;
   state.typedBuffer = restore && savedProgress ? savedProgress.typedBuffer || "" : "";
   state.currentError = false;
+  state.failedSnapshots =
+    restore && savedProgress?.failedSnapshots && typeof savedProgress.failedSnapshots === "object"
+      ? { ...savedProgress.failedSnapshots }
+      : {};
   state.metrics = restore && savedProgress
     ? {
         startedAt: Date.now() - Math.max(0, savedProgress.elapsedSec || 0) * 1000,
@@ -226,8 +231,6 @@ function startPractice(poemId, restore = true) {
 
 function processKey(char) {
   const key = char.toLowerCase();
-  const current = state.units[state.cursor];
-  if (!current || current.isPunctuation) return;
 
   if (key === "backspace") {
     if (state.typedBuffer.length > 0) {
@@ -241,8 +244,15 @@ function processKey(char) {
       }
       const prev = state.units[state.cursor];
       if (prev && !prev.isPunctuation) {
-        state.typedBuffer = prev.pinyinRaw.slice(0, -1);
-        state.metrics.correctCharCount = Math.max(0, state.metrics.correctCharCount - 1);
+        const prevKey = String(state.cursor);
+        const failSnap = state.failedSnapshots[prevKey];
+        if (failSnap !== undefined) {
+          delete state.failedSnapshots[prevKey];
+          state.typedBuffer = failSnap.length <= 1 ? "" : failSnap.slice(0, -1);
+        } else {
+          state.typedBuffer = prev.pinyinRaw.slice(0, -1);
+          state.metrics.correctCharCount = Math.max(0, state.metrics.correctCharCount - 1);
+        }
         state.currentError = false;
         afterInput();
       }
@@ -250,23 +260,41 @@ function processKey(char) {
     return;
   }
 
+  const current = state.units[state.cursor];
+  if (!current || current.isPunctuation) return;
+
   if (!/^[a-z]$/.test(key)) return;
   state.metrics.totalKeyCount += 1;
   state.typedBuffer += key;
 
   const expectedRaw = current.pinyinRaw;
-  if (expectedRaw.startsWith(state.typedBuffer)) {
+  const pos = state.typedBuffer.length - 1;
+  const keyOk = pos < expectedRaw.length && key === expectedRaw[pos];
+  if (keyOk) {
     state.metrics.correctKeyCount += 1;
-    state.currentError = false;
-    if (state.typedBuffer.length >= expectedRaw.length) {
-      state.cursor += 1;
-      state.metrics.correctCharCount += 1;
-      state.typedBuffer = "";
-      skipPunctuation();
-    }
   } else {
-    state.currentError = true;
     state.metrics.errorCount += 1;
+  }
+
+  if (state.typedBuffer.length >= expectedRaw.length) {
+    let allOk = true;
+    for (let i = 0; i < expectedRaw.length; i += 1) {
+      if (state.typedBuffer[i] !== expectedRaw[i]) {
+        allOk = false;
+        break;
+      }
+    }
+    if (allOk) {
+      state.metrics.correctCharCount += 1;
+    } else {
+      state.failedSnapshots[String(state.cursor)] = state.typedBuffer;
+    }
+    state.cursor += 1;
+    state.typedBuffer = "";
+    state.currentError = false;
+    skipPunctuation();
+  } else {
+    refreshTypingStatus();
   }
   afterInput();
 }
@@ -314,6 +342,7 @@ function saveProgress(totalChars) {
   state.saved.progressByPoem[state.currentPoem.id] = {
     cursor: state.cursor,
     typedBuffer: state.typedBuffer,
+    failedSnapshots: { ...state.failedSnapshots },
     totalKeyCount: state.metrics.totalKeyCount,
     correctKeyCount: state.metrics.correctKeyCount,
     correctCharCount: state.metrics.correctCharCount,
@@ -335,7 +364,14 @@ function refreshTypingStatus() {
     state.currentError = false;
     return;
   }
-  state.currentError = !current.pinyinRaw.startsWith(state.typedBuffer);
+  const expectedRaw = current.pinyinRaw;
+  state.currentError = false;
+  for (let i = 0; i < state.typedBuffer.length; i += 1) {
+    if (state.typedBuffer[i] !== expectedRaw[i]) {
+      state.currentError = true;
+      break;
+    }
+  }
 }
 
 function renderTypingPanel() {
@@ -368,12 +404,17 @@ function renderTypingPanel() {
       const isCurrent = globalIndex === state.cursor;
       const isDone = globalIndex < state.cursor && !unit.isPunctuation;
       const isPunct = unit.isPunctuation;
+      const failTyped = state.failedSnapshots[String(globalIndex)];
+      const isSkippedWrong = isDone && failTyped !== undefined;
 
       if (isPunct) {
         pySpan.classList.add("punct");
         hzSpan.classList.add("punct");
       }
-      if (isDone) {
+      if (isSkippedWrong) {
+        renderFailedPinyin(pySpan, unit.pinyinRaw, failTyped);
+        hzSpan.classList.add("error");
+      } else if (isDone) {
         pySpan.classList.add("done");
         hzSpan.classList.add("done");
       }
@@ -435,6 +476,37 @@ function renderCurrentPinyin(container, expectedRaw, typedBuffer) {
       extra.textContent = typedBuffer[i];
       container.appendChild(extra);
     }
+  }
+}
+
+/** 已完成的字含错键：逐字母对错着色；快照短于音节时剩余字母按绿色展示 */
+function renderFailedPinyin(container, expectedRaw, failTyped) {
+  const expected = expectedRaw || "";
+  container.textContent = "";
+  for (let i = 0; i < expected.length; i += 1) {
+    const letter = document.createElement("span");
+    letter.className = "py-letter";
+    if (i < failTyped.length) {
+      const t = failTyped[i];
+      const e = expected[i];
+      if (t === e) {
+        letter.classList.add("ok");
+        letter.textContent = e;
+      } else {
+        letter.classList.add("err");
+        letter.textContent = t;
+      }
+    } else {
+      letter.classList.add("ok");
+      letter.textContent = expected[i];
+    }
+    container.appendChild(letter);
+  }
+  for (let i = expected.length; i < failTyped.length; i += 1) {
+    const extra = document.createElement("span");
+    extra.className = "py-letter err";
+    extra.textContent = failTyped[i];
+    container.appendChild(extra);
   }
 }
 

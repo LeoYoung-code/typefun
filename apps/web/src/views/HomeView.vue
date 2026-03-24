@@ -111,11 +111,10 @@ function continuePractice() {
           v-for="poem in poems"
           :key="poem.id"
           class="course-card"
-          :class="{ locked: !poem.unlocked }"
         >
           <div class="course-card-top">
             <span>{{ renderStars(saved.bestByPoem[poem.id]?.stars ?? poem.stars ?? 0) }}</span>
-            <span>{{ poem.unlocked ? "可练习" : "🔒 未解锁" }}</span>
+            <span>可练习</span>
           </div>
           <div>
             <div class="course-card-title">《{{ poem.title }}》</div>
@@ -124,10 +123,9 @@ function continuePractice() {
           <button
             type="button"
             class="primary-btn"
-            :disabled="!poem.unlocked"
             @click="startPractice(poem.id)"
           >
-            {{ poem.unlocked ? "开始练习" : "已锁定" }}
+            开始练习
           </button>
         </article>
       </div>
