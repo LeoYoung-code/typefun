@@ -47,7 +47,40 @@ body {
 
 .top-actions {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 10px;
+  justify-content: flex-end;
+}
+
+.speech-voice-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.speech-voice-label {
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.speech-voice-select {
+  min-width: 0;
+  max-width: min(260px, 46vw);
+  border: 1px solid var(--line);
+  color: var(--text);
+  background: var(--bg-2);
+  padding: 8px 10px;
+  border-radius: 10px;
+  min-height: 44px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.speech-voice-select:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 .ghost-btn,

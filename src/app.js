@@ -1,8 +1,18 @@
 import { extractCompletedHanzi } from "../packages/typing-core/dist/index.js";
-import { createSpeechQueue } from "../packages/speech-queue/dist/index.js";
+import {
+  buildSpeechVoicePickerOptions,
+  createSpeechQueue,
+  mergeOrphanSpeechVoiceOption,
+  subscribeSpeechVoices
+} from "../packages/speech-queue/dist/index.js";
 import { poems } from "../data/poems.js";
 import { flattenPoem, pinyinDisplayLetters } from "./pinyin.js";
-import { loadSpeechEnabled, saveSpeechEnabled } from "./speech-prefs.js";
+import {
+  loadSpeechEnabled,
+  loadSpeechVoiceURI,
+  saveSpeechEnabled,
+  saveSpeechVoiceURI
+} from "./speech-prefs.js";
 import { calcStats, formatDuration, formatPercent, formatRate } from "./stats.js";
 import { loadState, saveState, clearProgress } from "./storage.js";
 
@@ -38,6 +48,7 @@ const els = {
   finishDialogStars: document.getElementById("finish-dialog-stars"),
   finishDialogClose: document.getElementById("finish-dialog-close"),
   btnSpeech: document.getElementById("btn-speech"),
+  speechVoice: document.getElementById("speech-voice"),
   speechHint: document.getElementById("speech-hint")
 };
 
@@ -60,13 +71,32 @@ const state = {
   timer: null
 };
 
+const SPEECH_LANG = "zh-CN";
+
 let speech = null;
 let speechEnabled = loadSpeechEnabled();
 
 init();
 
+function refreshSpeechVoiceSelect() {
+  if (!els.speechVoice) return;
+  let opts = buildSpeechVoicePickerOptions(SPEECH_LANG);
+  opts = mergeOrphanSpeechVoiceOption(opts, loadSpeechVoiceURI(), SPEECH_LANG);
+  const saved = loadSpeechVoiceURI() ?? "";
+  els.speechVoice.innerHTML = "";
+  for (const o of opts) {
+    const opt = document.createElement("option");
+    opt.value = o.value;
+    opt.textContent = o.label;
+    if (o.value === saved) opt.selected = true;
+    els.speechVoice.appendChild(opt);
+  }
+}
+
 function initSpeech() {
   speech = createSpeechQueue({
+    lang: SPEECH_LANG,
+    voiceURI: loadSpeechVoiceURI(),
     onUnsupported: () => {
       if (els.speechHint) {
         els.speechHint.textContent = "当前环境不支持朗读（浏览器或系统未提供语音合成）。";
@@ -76,6 +106,15 @@ function initSpeech() {
   });
   speech.setEnabled(speechEnabled);
   updateSpeechButton();
+  refreshSpeechVoiceSelect();
+  subscribeSpeechVoices(refreshSpeechVoiceSelect);
+  if (els.speechVoice) {
+    els.speechVoice.addEventListener("change", () => {
+      const v = els.speechVoice.value || null;
+      saveSpeechVoiceURI(v);
+      speech?.setVoiceURI(v);
+    });
+  }
 }
 
 function updateSpeechButton() {

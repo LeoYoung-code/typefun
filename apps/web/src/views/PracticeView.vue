@@ -15,12 +15,23 @@ import {
   type PoemCategory,
   type PracticeState
 } from "@typefun/typing-core";
-import { createSpeechQueue } from "@typefun/speech-queue";
+import {
+  buildSpeechVoicePickerOptions,
+  createSpeechQueue,
+  mergeOrphanSpeechVoiceOption,
+  subscribeSpeechVoices,
+  type SpeechVoiceOption
+} from "@typefun/speech-queue";
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
 import TypingPanel from "../components/TypingPanel.vue";
-import { loadSpeechEnabled, saveSpeechEnabled } from "../lib/speech-prefs";
+import {
+  loadSpeechEnabled,
+  loadSpeechVoiceURI,
+  saveSpeechEnabled,
+  saveSpeechVoiceURI
+} from "../lib/speech-prefs";
 import { clearProgress, loadState, saveState } from "../lib/storage";
 
 const props = defineProps<{ id: string }>();
@@ -43,11 +54,29 @@ const practiceGenreLabel = computed(() => {
 const imeInput = ref<HTMLInputElement | null>(null);
 const composing = ref(false);
 
+const SPEECH_LANG = "zh-CN";
+
 const speech = ref<ReturnType<typeof createSpeechQueue> | null>(null);
 const speechEnabled = ref(loadSpeechEnabled());
+const speechVoiceURI = ref(loadSpeechVoiceURI() ?? "");
+const voiceOptions = ref<SpeechVoiceOption[]>([]);
 const speechUnsupported = ref(false);
 
+function refreshSpeechVoiceOptions() {
+  let opts = buildSpeechVoicePickerOptions(SPEECH_LANG);
+  opts = mergeOrphanSpeechVoiceOption(opts, loadSpeechVoiceURI(), SPEECH_LANG);
+  voiceOptions.value = opts;
+}
+
+function onSpeechVoiceChange(ev: Event) {
+  const el = ev.target as HTMLSelectElement;
+  speechVoiceURI.value = el.value;
+  saveSpeechVoiceURI(el.value || null);
+  speech.value?.setVoiceURI(el.value || null);
+}
+
 let statsTimer: ReturnType<typeof setInterval> | null = null;
+let unsubSpeechVoices: (() => void) | null = null;
 const displayNow = ref(Date.now());
 
 function totalChars(state: PracticeState) {
@@ -251,7 +280,11 @@ watch(
 );
 
 onMounted(() => {
+  unsubSpeechVoices = subscribeSpeechVoices(refreshSpeechVoiceOptions);
+  refreshSpeechVoiceOptions();
   speech.value = createSpeechQueue({
+    lang: SPEECH_LANG,
+    voiceURI: speechVoiceURI.value || null,
     onUnsupported: () => {
       speechUnsupported.value = true;
     }
@@ -263,6 +296,8 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  unsubSpeechVoices?.();
+  unsubSpeechVoices = null;
   stopStatsTimer();
   window.removeEventListener("keydown", onWindowKey);
   window.removeEventListener("keydown", onKey);
@@ -294,6 +329,23 @@ watch(
         >
           {{ speechEnabled ? "朗读：开" : "朗读：关" }}
         </button>
+        <label class="speech-voice-wrap">
+          <span class="speech-voice-label">音色</span>
+          <select
+            class="speech-voice-select"
+            aria-label="朗读音色"
+            :value="speechVoiceURI"
+            @change="onSpeechVoiceChange"
+          >
+            <option
+              v-for="opt in voiceOptions"
+              :key="opt.value === '' ? 'default' : opt.value"
+              :value="opt.value"
+            >
+              {{ opt.label }}
+            </option>
+          </select>
+        </label>
       </div>
     </header>
 

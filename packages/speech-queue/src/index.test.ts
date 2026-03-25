@@ -3,14 +3,27 @@ import { createSpeechQueue } from "./index.js";
 
 describe("createSpeechQueue", () => {
   const spoken: string[] = [];
+  let lastUtterance: SpeechSynthesisUtterance | null = null;
+  let mockVoices: SpeechSynthesisVoice[] = [];
 
   beforeEach(() => {
     spoken.length = 0;
+    lastUtterance = null;
+    mockVoices = [
+      {
+        voiceURI: "urn:test:zh-female",
+        name: "中文女",
+        lang: "zh-CN",
+        localService: true,
+        default: false
+      } as SpeechSynthesisVoice
+    ];
     vi.stubGlobal(
       "SpeechSynthesisUtterance",
       class {
         text: string;
         lang = "";
+        voice: SpeechSynthesisVoice | null = null;
         onend: ((ev: SpeechSynthesisEvent) => void) | null = null;
         onerror: ((ev: SpeechSynthesisEvent) => void) | null = null;
         constructor(text: string) {
@@ -19,6 +32,7 @@ describe("createSpeechQueue", () => {
       }
     );
     const speak = vi.fn((u: SpeechSynthesisUtterance) => {
+      lastUtterance = u;
       spoken.push(u.text);
       queueMicrotask(() => u.onend?.({} as SpeechSynthesisEvent));
     });
@@ -26,7 +40,7 @@ describe("createSpeechQueue", () => {
     vi.stubGlobal("speechSynthesis", {
       speak,
       cancel,
-      getVoices: () => [],
+      getVoices: () => mockVoices,
       pause: vi.fn(),
       resume: vi.fn(),
       speaking: false,
@@ -68,5 +82,35 @@ describe("createSpeechQueue", () => {
     q.enqueue("一二三四");
     await vi.waitFor(() => spoken.length >= 1);
     expect(spoken[0]).toBe("一二三四");
+  });
+
+  it("sets utterance voice when voiceURI matches", async () => {
+    const q = createSpeechQueue({
+      mergeThreshold: 100,
+      lang: "zh-CN",
+      voiceURI: "urn:test:zh-female"
+    });
+    q.setEnabled(true);
+    q.enqueue("春");
+    await vi.waitFor(() => spoken.length >= 1);
+    expect(lastUtterance?.voice?.voiceURI).toBe("urn:test:zh-female");
+  });
+
+  it("updates voice via setVoiceURI", async () => {
+    const v2 = {
+      voiceURI: "urn:test:zh-male",
+      name: "中文男",
+      lang: "zh-CN",
+      localService: true,
+      default: false
+    } as SpeechSynthesisVoice;
+    mockVoices = [...mockVoices, v2];
+
+    const q = createSpeechQueue({ mergeThreshold: 100, lang: "zh-CN" });
+    q.setEnabled(true);
+    q.setVoiceURI("urn:test:zh-male");
+    q.enqueue("秋");
+    await vi.waitFor(() => spoken.length >= 1);
+    expect(lastUtterance?.voice?.voiceURI).toBe("urn:test:zh-male");
   });
 });
