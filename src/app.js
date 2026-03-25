@@ -445,26 +445,33 @@ function skipPunctuation() {
 }
 
 function finishPoem(totalChars) {
-  speech?.cancel();
-  clearInterval(state.timer);
-  state.timer = null;
-  const stats = calcStats(state.metrics, totalChars);
-  const stars = scoreToStars(stats.accuracy, stats.cpm);
-  state.saved.bestByPoem[state.currentPoem.id] = {
-    stars,
-    accuracy: stats.accuracy,
-    cpm: stats.cpm,
-    updatedAt: Date.now()
+  const showFinish = () => {
+    clearInterval(state.timer);
+    state.timer = null;
+    const stats = calcStats(state.metrics, totalChars);
+    const stars = scoreToStars(stats.accuracy, stats.cpm);
+    state.saved.bestByPoem[state.currentPoem.id] = {
+      stars,
+      accuracy: stats.accuracy,
+      cpm: stats.cpm,
+      updatedAt: Date.now()
+    };
+    delete state.saved.progressByPoem[state.currentPoem.id];
+    saveState(state.saved);
+    renderCourse();
+    showContinueIfAny();
+    showCourse();
+    const elapsedSec = (Date.now() - state.metrics.startedAt) / 1000;
+    els.finishDialogSummary.textContent = `《${state.currentPoem.title}》\n准确率 ${formatPercent(stats.accuracy)} · 速度 ${formatRate(stats.cpm, "字/分钟")} · 用时 ${formatDuration(elapsedSec)}`;
+    els.finishDialogStars.textContent = `${"★".repeat(stars)}${"☆".repeat(5 - stars)}`;
+    els.finishDialog.showModal();
   };
-  delete state.saved.progressByPoem[state.currentPoem.id];
-  saveState(state.saved);
-  renderCourse();
-  showContinueIfAny();
-  showCourse();
-  const elapsedSec = (Date.now() - state.metrics.startedAt) / 1000;
-  els.finishDialogSummary.textContent = `《${state.currentPoem.title}》\n准确率 ${formatPercent(stats.accuracy)} · 速度 ${formatRate(stats.cpm, "字/分钟")} · 用时 ${formatDuration(elapsedSec)}`;
-  els.finishDialogStars.textContent = `${"★".repeat(stars)}${"☆".repeat(5 - stars)}`;
-  els.finishDialog.showModal();
+
+  if (speech && speechEnabled) {
+    void speech.waitUntilIdle().then(showFinish);
+  } else {
+    showFinish();
+  }
 }
 
 function saveProgress(totalChars) {

@@ -210,10 +210,14 @@ function toggleSpeech() {
   if (speechEnabled.value) speechUnsupported.value = false;
 }
 
-function finishPractice(tc: number) {
+async function finishPractice(tc: number) {
   if (!practice.value || !poem.value) return;
   stopStatsTimer();
-  speech.value?.cancel();
+  const sq = speech.value;
+  if (sq?.getEnabled()) {
+    await sq.waitUntilIdle();
+  }
+  if (!practice.value || !poem.value) return;
   const now = Date.now();
   const stats = calcStats(practice.value.metrics, tc, now);
   const stars = scoreToStars(stats.accuracy, stats.cpm);

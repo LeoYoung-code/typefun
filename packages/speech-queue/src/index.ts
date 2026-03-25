@@ -27,6 +27,8 @@ export type SpeechQueue = {
   getEnabled(): boolean;
   setVoiceURI(uri: string | null): void;
   getVoiceURI(): string | null;
+  /** 队列已空且当前无在播 utterance 时 resolve（用于练习结束前播完最后一字） */
+  waitUntilIdle(): Promise<void>;
   cancel(): void;
   destroy(): void;
 };
@@ -160,6 +162,25 @@ export function createSpeechQueue(options?: SpeechQueueOptions): SpeechQueue {
   let speaking = false;
   let watchdog: ReturnType<typeof setTimeout> | null = null;
   let unsupportedNotified = false;
+  const idleResolvers: Array<() => void> = [];
+
+  function maybeResolveIdle() {
+    if (speaking || queue.length > 0) return;
+    const batch = idleResolvers.splice(0);
+    for (const fn of batch) {
+      queueMicrotask(fn);
+    }
+  }
+
+  function waitUntilIdle(): Promise<void> {
+    return new Promise((resolve) => {
+      if (!speaking && queue.length === 0) {
+        queueMicrotask(resolve);
+        return;
+      }
+      idleResolvers.push(resolve);
+    });
+  }
 
   let visHandler: (() => void) | null = null;
   if (typeof document !== "undefined") {
@@ -201,10 +222,15 @@ export function createSpeechQueue(options?: SpeechQueueOptions): SpeechQueue {
         unsupportedNotified = true;
         onUnsupported();
       }
+      queue.length = 0;
+      maybeResolveIdle();
       return;
     }
     const text = takeNextUtteranceText();
-    if (!text) return;
+    if (!text) {
+      maybeResolveIdle();
+      return;
+    }
 
     speaking = true;
     const u = new SpeechSynthesisUtterance(text);
@@ -216,6 +242,7 @@ export function createSpeechQueue(options?: SpeechQueueOptions): SpeechQueue {
       clearWatchdog();
       speaking = false;
       speakNext();
+      queueMicrotask(() => maybeResolveIdle());
     };
     u.onend = finish;
     u.onerror = finish;
@@ -246,6 +273,7 @@ export function createSpeechQueue(options?: SpeechQueueOptions): SpeechQueue {
     }
     queue.length = 0;
     speaking = false;
+    maybeResolveIdle();
   }
 
   function enqueue(text: string) {
@@ -295,6 +323,7 @@ export function createSpeechQueue(options?: SpeechQueueOptions): SpeechQueue {
     getEnabled,
     setVoiceURI,
     getVoiceURI,
+    waitUntilIdle,
     cancel,
     destroy
   };

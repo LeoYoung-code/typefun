@@ -113,4 +113,14 @@ describe("createSpeechQueue", () => {
     await vi.waitFor(() => spoken.length >= 1);
     expect(lastUtterance?.voice?.voiceURI).toBe("urn:test:zh-male");
   });
+
+  it("waitUntilIdle resolves after all utterances finish", async () => {
+    const q = createSpeechQueue({ mergeThreshold: 100, lang: "zh-CN" });
+    q.setEnabled(true);
+    q.enqueue("甲");
+    q.enqueue("乙");
+    const idle = q.waitUntilIdle();
+    await idle;
+    expect(spoken).toEqual(["甲", "乙"]);
+  });
 });
