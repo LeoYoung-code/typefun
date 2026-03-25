@@ -26,6 +26,13 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
 import TypingPanel from "../components/TypingPanel.vue";
+import { createKeySoundEngine } from "@typefun/key-sounds";
+import {
+  loadKeySoundEnabled,
+  loadKeySoundPresetId,
+  saveKeySoundEnabled,
+  saveKeySoundPresetId
+} from "../lib/key-sound-prefs";
 import {
   loadSpeechEnabled,
   loadSpeechVoiceURI,
@@ -62,6 +69,12 @@ const speechVoiceURI = ref(loadSpeechVoiceURI() ?? "");
 const voiceOptions = ref<SpeechVoiceOption[]>([]);
 const speechUnsupported = ref(false);
 
+const keySound = ref<ReturnType<typeof createKeySoundEngine> | null>(null);
+const keySoundEnabled = ref(loadKeySoundEnabled());
+const keySoundPresetId = ref(loadKeySoundPresetId() ?? "");
+const keySoundPresetOptions = ref<{ id: string; label: string }[]>([]);
+const keySoundUnsupported = ref(false);
+
 function refreshSpeechVoiceOptions() {
   let opts = buildSpeechVoicePickerOptions(SPEECH_LANG);
   opts = mergeOrphanSpeechVoiceOption(opts, loadSpeechVoiceURI(), SPEECH_LANG);
@@ -73,6 +86,31 @@ function onSpeechVoiceChange(ev: Event) {
   speechVoiceURI.value = el.value;
   saveSpeechVoiceURI(el.value || null);
   speech.value?.setVoiceURI(el.value || null);
+}
+
+function onKeySoundPresetChange(ev: Event) {
+  const el = ev.target as HTMLSelectElement;
+  keySoundPresetId.value = el.value;
+  saveKeySoundPresetId(el.value || null);
+  keySound.value?.setPresetId(el.value || null);
+}
+
+function toggleKeySound() {
+  keySoundEnabled.value = !keySoundEnabled.value;
+  saveKeySoundEnabled(keySoundEnabled.value);
+  keySound.value?.setEnabled(keySoundEnabled.value);
+  if (keySoundEnabled.value) keySoundUnsupported.value = false;
+}
+
+function maybePlayKeySound(
+  prevState: PracticeState | null,
+  nextState: PracticeState,
+  kind: "key" | "backspace" | "error"
+) {
+  if (prevState === nextState) return;
+  if (!keySound.value?.getEnabled()) return;
+  void keySound.value.unlock();
+  keySound.value.play(kind);
 }
 
 let statsTimer: ReturnType<typeof setInterval> | null = null;
@@ -150,14 +188,21 @@ function onKey(ev: KeyboardEvent) {
   if (ev.key === "Backspace") {
     ev.preventDefault();
     const prev = practice.value;
-    practice.value = applyPracticeKey(practice.value, "backspace", Date.now());
+    const next = applyPracticeKey(practice.value, "backspace", Date.now());
+    maybePlayKeySound(prev, next, "backspace");
+    practice.value = next;
     afterInput(prev);
     return;
   }
   if (/^[a-zA-Z]$/.test(ev.key)) {
     ev.preventDefault();
     const prev = practice.value;
-    practice.value = applyPracticeKey(practice.value, ev.key, Date.now());
+    const next = applyPracticeKey(practice.value, ev.key, Date.now());
+    if (prev !== next) {
+      const wrongLetter = next.metrics.errorCount > prev.metrics.errorCount;
+      maybePlayKeySound(prev, next, wrongLetter ? "error" : "key");
+    }
+    practice.value = next;
     afterInput(prev);
   }
 }
@@ -184,7 +229,12 @@ function onImeInput(ev: Event) {
   if (!text) return;
   for (const ch of text) {
     const prev = practice.value;
-    practice.value = applyPracticeKey(practice.value, ch, Date.now());
+    const next = applyPracticeKey(practice.value, ch, Date.now());
+    if (prev !== next) {
+      const wrongLetter = next.metrics.errorCount > prev.metrics.errorCount;
+      maybePlayKeySound(prev, next, wrongLetter ? "error" : "key");
+    }
+    practice.value = next;
     afterInput(prev);
   }
   el.value = "";
@@ -283,7 +333,7 @@ watch(
   { deep: true }
 );
 
-onMounted(() => {
+onMounted(async () => {
   unsubSpeechVoices = subscribeSpeechVoices(refreshSpeechVoiceOptions);
   refreshSpeechVoiceOptions();
   speech.value = createSpeechQueue({
@@ -294,6 +344,34 @@ onMounted(() => {
     }
   });
   speech.value.setEnabled(speechEnabled.value);
+
+  const manifestUrl = new URL("sounds/manifest.json", window.location.origin);
+  const ks = createKeySoundEngine({ manifestUrl, maxPolyphony: 12 });
+  keySound.value = ks;
+  ks.setEnabled(keySoundEnabled.value);
+  ks.setPresetId(loadKeySoundPresetId() || null);
+  try {
+    await ks.init();
+    const res = await fetch(manifestUrl);
+    if (res.ok) {
+      const m = (await res.json()) as { presets: { id: string; label: string }[] };
+      keySoundPresetOptions.value = m.presets.map((p) => ({ id: p.id, label: p.label }));
+      const saved = loadKeySoundPresetId();
+      if (!saved && m.presets[0]) {
+        keySoundPresetId.value = m.presets[0].id;
+        saveKeySoundPresetId(m.presets[0].id);
+        ks.setPresetId(m.presets[0].id);
+      } else if (saved && !m.presets.some((p) => p.id === saved)) {
+        const first = m.presets[0]?.id ?? "";
+        keySoundPresetId.value = first;
+        saveKeySoundPresetId(first || null);
+        ks.setPresetId(first || null);
+      }
+    }
+  } catch {
+    keySoundUnsupported.value = true;
+  }
+
   loadPoem();
   window.addEventListener("keydown", onWindowKey);
   window.addEventListener("keydown", onKey);
@@ -307,6 +385,8 @@ onUnmounted(() => {
   window.removeEventListener("keydown", onKey);
   speech.value?.destroy();
   speech.value = null;
+  keySound.value?.dispose();
+  keySound.value = null;
 });
 
 watch(
@@ -350,6 +430,28 @@ watch(
             </option>
           </select>
         </label>
+        <button
+          type="button"
+          class="ghost-btn"
+          :aria-pressed="keySoundEnabled"
+          aria-label="键声开关"
+          @click="toggleKeySound"
+        >
+          {{ keySoundEnabled ? "键声：开" : "键声：关" }}
+        </button>
+        <label class="speech-voice-wrap">
+          <span class="speech-voice-label">键声</span>
+          <select
+            class="speech-voice-select"
+            aria-label="键声音色"
+            :value="keySoundPresetId"
+            @change="onKeySoundPresetChange"
+          >
+            <option v-for="opt in keySoundPresetOptions" :key="opt.id" :value="opt.id">
+              {{ opt.label }}
+            </option>
+          </select>
+        </label>
       </div>
     </header>
 
@@ -386,6 +488,9 @@ watch(
       </div>
       <p v-if="speechUnsupported" class="speech-hint" role="status">
         当前环境不支持朗读（浏览器或系统未提供语音合成）。
+      </p>
+      <p v-if="keySoundUnsupported" class="speech-hint" role="status">
+        键声加载失败（请确认已构建音效资源，且使用 http(s) 访问）。
       </p>
       <p class="hint-kbd">
         练习时按 Esc 返回课程；使用键盘输入拼音。开启顶栏「朗读」可听字音（默认关）。

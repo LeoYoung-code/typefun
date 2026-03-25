@@ -4,6 +4,7 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   plugins: [vue()],
+  publicDir: fileURLToPath(new URL("../../public", import.meta.url)),
   resolve: {
     alias: {
       "@typefun/typing-core": fileURLToPath(
@@ -11,6 +12,9 @@ export default defineConfig({
       ),
       "@typefun/speech-queue": fileURLToPath(
         new URL("../../packages/speech-queue/src/index.ts", import.meta.url)
+      ),
+      "@typefun/key-sounds": fileURLToPath(
+        new URL("../../packages/key-sounds/src/index.ts", import.meta.url)
       )
     }
   },

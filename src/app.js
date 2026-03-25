@@ -1,4 +1,5 @@
 import { extractCompletedHanzi } from "../packages/typing-core/dist/index.js";
+import { createKeySoundEngine } from "../packages/key-sounds/dist/index.js";
 import {
   buildSpeechVoicePickerOptions,
   createSpeechQueue,
@@ -49,7 +50,9 @@ const els = {
   finishDialogClose: document.getElementById("finish-dialog-close"),
   btnSpeech: document.getElementById("btn-speech"),
   speechVoice: document.getElementById("speech-voice"),
-  speechHint: document.getElementById("speech-hint")
+  speechHint: document.getElementById("speech-hint"),
+  btnKeySound: document.getElementById("btn-key-sound"),
+  keySoundPreset: document.getElementById("key-sound-preset")
 };
 
 const state = {
@@ -76,7 +79,90 @@ const SPEECH_LANG = "zh-CN";
 let speech = null;
 let speechEnabled = loadSpeechEnabled();
 
+let keySound = null;
+let keySoundEnabled = loadKeySoundEnabled();
+
 init();
+
+function loadKeySoundEnabled() {
+  try {
+    const v = localStorage.getItem("typefun.keySound.enabled");
+    if (v === null) return true;
+    return v === "1" || v === "true";
+  } catch {
+    return true;
+  }
+}
+
+function saveKeySoundEnabled(enabled) {
+  try {
+    localStorage.setItem("typefun.keySound.enabled", enabled ? "1" : "0");
+  } catch {
+    /* ignore */
+  }
+}
+
+function loadKeySoundPresetId() {
+  try {
+    const v = localStorage.getItem("typefun.keySound.presetId");
+    if (v === null || v === "") return null;
+    return v;
+  } catch {
+    return null;
+  }
+}
+
+function saveKeySoundPresetId(id) {
+  try {
+    if (id === null || id === "") localStorage.removeItem("typefun.keySound.presetId");
+    else localStorage.setItem("typefun.keySound.presetId", id);
+  } catch {
+    /* ignore */
+  }
+}
+
+function updateKeySoundButton() {
+  if (!els.btnKeySound) return;
+  els.btnKeySound.setAttribute("aria-pressed", keySoundEnabled ? "true" : "false");
+  els.btnKeySound.textContent = keySoundEnabled ? "键声：开" : "键声：关";
+}
+
+function playKeySound(kind) {
+  if (!keySound || !keySoundEnabled) return;
+  void keySound.unlock();
+  keySound.play(kind);
+}
+
+async function initKeySound() {
+  const manifestUrl = new URL("../public/sounds/manifest.json", import.meta.url);
+  keySound = createKeySoundEngine({ manifestUrl, maxPolyphony: 12 });
+  keySound.setEnabled(keySoundEnabled);
+  keySound.setPresetId(loadKeySoundPresetId());
+  updateKeySoundButton();
+  try {
+    await keySound.init();
+    const res = await fetch(manifestUrl);
+    if (!res.ok) return;
+    const m = await res.json();
+    if (els.keySoundPreset) {
+      els.keySoundPreset.innerHTML = "";
+      for (const p of m.presets) {
+        const opt = document.createElement("option");
+        opt.value = p.id;
+        opt.textContent = p.label;
+        els.keySoundPreset.appendChild(opt);
+      }
+      const saved = loadKeySoundPresetId();
+      const first = m.presets[0]?.id ?? "";
+      els.keySoundPreset.value =
+        saved && m.presets.some((x) => x.id === saved) ? saved : first;
+      saveKeySoundPresetId(els.keySoundPreset.value || null);
+      keySound.setPresetId(els.keySoundPreset.value || null);
+    }
+  } catch {
+    /* ignore */
+  }
+}
 
 function refreshSpeechVoiceSelect() {
   if (!els.speechVoice) return;
@@ -133,6 +219,7 @@ function practiceSnapshot() {
 
 function init() {
   initSpeech();
+  void initKeySound();
   bindEvents();
   renderCourse();
   showContinueIfAny();
@@ -168,6 +255,23 @@ function bindEvents() {
       if (speechEnabled && els.speechHint) {
         els.speechHint.classList.add("hidden");
       }
+    });
+  }
+
+  if (els.btnKeySound) {
+    els.btnKeySound.addEventListener("click", () => {
+      keySoundEnabled = !keySoundEnabled;
+      saveKeySoundEnabled(keySoundEnabled);
+      keySound?.setEnabled(keySoundEnabled);
+      updateKeySoundButton();
+    });
+  }
+
+  if (els.keySoundPreset) {
+    els.keySoundPreset.addEventListener("change", () => {
+      const v = els.keySoundPreset.value || null;
+      saveKeySoundPresetId(v);
+      keySound?.setPresetId(v);
     });
   }
 
@@ -361,6 +465,7 @@ function processKey(char) {
     if (state.typedBuffer.length > 0) {
       state.typedBuffer = state.typedBuffer.slice(0, -1);
       refreshTypingStatus();
+      playKeySound("backspace");
       afterInput(snapBefore);
     } else if (state.cursor > 0) {
       state.cursor -= 1;
@@ -379,6 +484,7 @@ function processKey(char) {
           state.metrics.correctCharCount = Math.max(0, state.metrics.correctCharCount - 1);
         }
         state.currentError = false;
+        playKeySound("backspace");
         afterInput(snapBefore);
       }
     }
@@ -420,6 +526,11 @@ function processKey(char) {
     skipPunctuation();
   } else {
     refreshTypingStatus();
+  }
+  if (keyOk) {
+    playKeySound("key");
+  } else {
+    playKeySound("error");
   }
   afterInput(snapBefore);
 }

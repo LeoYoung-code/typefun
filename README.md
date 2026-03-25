@@ -5,12 +5,15 @@
 ## 已实现（静态 MVP）
 
 - 课程页、练习页、IME 合成门禁、统计、localStorage 续练、完成 `<dialog>`  
-- 本地运行：先 `pnpm run build:libs`（生成 `typing-core` / `speech-queue` 的 `dist`，供静态页 `import`），再 `python3 -m http.server 4173` → `http://127.0.0.1:4173/index.html`
+- 本地运行：先 `pnpm run build:libs`（生成 `typing-core` / `speech-queue` / `key-sounds` 的 `dist`），再 `python3 -m http.server 4173` → `http://127.0.0.1:4173/index.html`  
+- 键声：`public/sounds` 默认为 **CC0 实录**（Cherry KC1000 + Kenney UI），来源见 `public/sounds/LICENSES.md`。可 `pnpm run fetch:keys` 重新下载打包（需网络、`unzip`、`ffmpeg`）。无网时可 `node scripts/generate-key-sounds.mjs` 生成合成占位。  
+- 输错拼音字母时播放 `error.wav`（合成），与正确键的机械声互斥；由 `manifest.json` 的 `errorSample` 指定。
 
 ## Vue + Node（Phase 1 / MVS）
 
 - **`packages/typing-core`**：拼音规范化、`flattenPoem`、练习状态机（`applyPracticeKey`）、统计与星级、`extractCompletedHanzi`；**Vitest** 单测。  
 - **`packages/speech-queue`**：浏览器 Web Speech 朗读队列（完成序 FIFO、积压合并与截断）；**Vitest** 单测。  
+- **`packages/key-sounds`**：Web Audio 机械键盘音效（manifest + 多音色随机采样）；**Vitest** 单测。  
 - **`apps/api`**：Fastify，`GET /api/health`、`/api/poems`、`/api/poems/:id`，数据来自 `data/poems.json`。  
 - **`apps/web`**：Vue 3 + Vue Router + Vite，开发时代理 `/api` → `127.0.0.1:8787`。完成结算经 `sessionStorage` 回到首页弹窗（避免路由卸载丢 `<dialog>`）。
 
@@ -23,9 +26,9 @@
 ```bash
 cd /Users/staff/project/AI/typefun
 pnpm install
-pnpm run build:libs   # 静态 MVP 与 workspace 依赖需先编译 typing-core + speech-queue
+pnpm run build:libs   # 编译 typing-core、speech-queue、key-sounds（静态页与 Vue 均依赖）
 pnpm dev          # 并行启动 API(8787) + Web(5173)
-pnpm test         # typing-core + speech-queue + apps/api
+pnpm test         # typing-core + speech-queue + key-sounds + apps/api
 ```
 
 浏览器打开：**http://127.0.0.1:5173/**（需 `pnpm dev` 同时起 API，否则首页会提示载入失败）。

@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "errorSample": "error.wav",
+  "presets": [
+    {
+      "id": "mx-brown",
+      "label": "茶轴向·KC1000 实录",
+      "keys": [
+        "mx-brown/key-01.wav",
+        "mx-brown/key-02.wav",
+        "mx-brown/key-03.wav",
+        "mx-brown/key-04.wav"
+      ],
+      "backspace": "mx-brown/backspace.wav"
+    },
+    {
+      "id": "mx-blue",
+      "label": "青轴向·KC1000 实录",
+      "keys": [
+        "mx-blue/key-01.wav",
+        "mx-blue/key-02.wav",
+        "mx-blue/key-03.wav",
+        "mx-blue/key-04.wav"
+      ],
+      "backspace": "mx-blue/backspace.wav"
+    },
+    {
+      "id": "soft",
+      "label": "轻触·Kenney UI",
+      "keys": [
+        "soft/key-01.wav",
+        "soft/key-02.wav",
+        "soft/key-03.wav",
+        "soft/key-04.wav"
+      ],
+      "backspace": "soft/backspace.wav"
+    }
+  ]
+}

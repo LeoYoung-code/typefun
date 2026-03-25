@@ -7,8 +7,9 @@
     "dev:api": "pnpm --filter @typefun/api dev",
     "dev:web": "pnpm --filter @typefun/web dev",
     "build": "pnpm run -r build",
-    "build:libs": "pnpm --filter @typefun/typing-core build && pnpm --filter @typefun/speech-queue build",
-    "test": "pnpm --filter @typefun/typing-core test && pnpm --filter @typefun/speech-queue test && pnpm --filter @typefun/api test"
+    "fetch:keys": "node scripts/fetch-real-key-sounds.mjs",
+    "build:libs": "pnpm --filter @typefun/typing-core build && pnpm --filter @typefun/speech-queue build && pnpm --filter @typefun/key-sounds build",
+    "test": "pnpm --filter @typefun/typing-core test && pnpm --filter @typefun/speech-queue test && pnpm --filter @typefun/key-sounds test && pnpm --filter @typefun/api test"
   },
   "engines": {
     "node": ">=20"
