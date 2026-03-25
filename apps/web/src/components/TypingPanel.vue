@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { Poem, Unit } from "@typefun/typing-core";
+import { pinyinDisplayLetters, type Poem, type Unit } from "@typefun/typing-core";
 
 const props = defineProps<{
   poem: Poem;
@@ -21,20 +21,22 @@ const lineStarts = computed(() => {
   return starts;
 });
 
-function pyLetters(expectedRaw: string, typedBuffer: string) {
+function pyLetters(pinyinTone: string, expectedRaw: string, typedBuffer: string) {
   const expected = expectedRaw || "";
+  const display = pinyinDisplayLetters(pinyinTone || "");
   const items: { ch: string; cls: string }[] = [];
   for (let i = 0; i < expected.length; i += 1) {
     const typed = typedBuffer[i];
     const current = expected[i];
+    const showCh = display[i] ?? current;
     if (typed !== undefined) {
       items.push({
-        ch: typed === current ? current : typed,
+        ch: typed === current ? showCh : typed,
         cls: typed === current ? "ok" : "err"
       });
     } else {
       const cls = i === typedBuffer.length ? "pending next" : "pending";
-      items.push({ ch: current, cls });
+      items.push({ ch: showCh, cls });
     }
   }
   if (typedBuffer.length > expected.length) {
@@ -46,19 +48,21 @@ function pyLetters(expectedRaw: string, typedBuffer: string) {
 }
 
 /** 已完成字含错键：逐字母着色；快照较短时剩余字母按绿色展示 */
-function pyLettersFailed(expectedRaw: string, failTyped: string) {
+function pyLettersFailed(pinyinTone: string, expectedRaw: string, failTyped: string) {
   const expected = expectedRaw || "";
+  const display = pinyinDisplayLetters(pinyinTone || "");
   const items: { ch: string; cls: string }[] = [];
   for (let i = 0; i < expected.length; i += 1) {
+    const showCh = display[i] ?? expected[i];
     if (i < failTyped.length) {
       const t = failTyped[i];
       const e = expected[i];
       items.push({
-        ch: t === e ? e : t,
+        ch: t === e ? showCh : t,
         cls: t === e ? "ok" : "err"
       });
     } else {
-      items.push({ ch: expected[i], cls: "ok" });
+      items.push({ ch: showCh, cls: "ok" });
     }
   }
   if (failTyped.length > expected.length) {
@@ -109,6 +113,7 @@ function pyLettersFailed(expectedRaw: string, failTyped: string) {
             >
               <span
                 v-for="(pl, pi) in pyLettersFailed(
+                  units[lineStarts[lineIndex] + idx].pinyin,
                   units[lineStarts[lineIndex] + idx].pinyinRaw,
                   failedSnapshots[String(lineStarts[lineIndex] + idx)]!
                 )"
@@ -126,6 +131,7 @@ function pyLettersFailed(expectedRaw: string, failTyped: string) {
             >
               <span
                 v-for="(pl, pi) in pyLetters(
+                  units[lineStarts[lineIndex] + idx].pinyin,
                   units[lineStarts[lineIndex] + idx].pinyinRaw,
                   typedBuffer
                 )"

@@ -50,6 +50,26 @@ export function normalizePinyin(py: string): string {
     .replace(/[^a-zv]/g, "");
 }
 
+/** 与 {@link normalizePinyin} 逐字一一对应，用于 UI 展示（保留声调、ü 等）。 */
+export function pinyinDisplayLetters(py: string): string[] {
+  if (!py) return [];
+  const letters: string[] = [];
+  for (const ch of py.toLowerCase()) {
+    if (TONE_MAP[ch] !== undefined) {
+      letters.push(ch);
+      continue;
+    }
+    if (/[a-z]/.test(ch)) {
+      letters.push(ch);
+    }
+  }
+  const raw = normalizePinyin(py);
+  if (letters.length !== raw.length) {
+    return [...raw];
+  }
+  return letters;
+}
+
 export function isPunctuation(char: string): boolean {
   return PUNCTUATION.has(char);
 }

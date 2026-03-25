@@ -1,5 +1,5 @@
 import { poems } from "../data/poems.js";
-import { flattenPoem } from "./pinyin.js";
+import { flattenPoem, pinyinDisplayLetters } from "./pinyin.js";
 import { calcStats, formatDuration, formatPercent, formatRate } from "./stats.js";
 import { loadState, saveState, clearProgress } from "./storage.js";
 
@@ -442,7 +442,7 @@ function renderTypingPanel() {
         hzSpan.classList.add("punct");
       }
       if (isSkippedWrong) {
-        renderFailedPinyin(pySpan, unit.pinyinRaw, failTyped);
+        renderFailedPinyin(pySpan, unit.pinyinRaw, failTyped, unit.pinyin);
         hzSpan.classList.add("error");
       } else if (isDone) {
         pySpan.classList.add("done");
@@ -456,7 +456,7 @@ function renderTypingPanel() {
           hzSpan.classList.add("error");
         }
         if (!isPunct) {
-          renderCurrentPinyin(pySpan, unit.pinyinRaw, state.typedBuffer);
+          renderCurrentPinyin(pySpan, unit.pinyinRaw, state.typedBuffer, unit.pinyin);
         }
       }
 
@@ -471,8 +471,9 @@ function renderTypingPanel() {
   });
 }
 
-function renderCurrentPinyin(container, expectedRaw, typedBuffer) {
+function renderCurrentPinyin(container, expectedRaw, typedBuffer, pinyinWithTone) {
   const expected = expectedRaw || "";
+  const display = pinyinDisplayLetters(pinyinWithTone || "");
   container.textContent = "";
 
   for (let i = 0; i < expected.length; i += 1) {
@@ -480,18 +481,19 @@ function renderCurrentPinyin(container, expectedRaw, typedBuffer) {
     letter.className = "py-letter";
     const typed = typedBuffer[i];
     const current = expected[i];
+    const showCh = display[i] ?? current;
 
     if (typed !== undefined) {
       if (typed === current) {
         letter.classList.add("ok");
-        letter.textContent = current;
+        letter.textContent = showCh;
       } else {
         letter.classList.add("err");
         letter.textContent = typed;
       }
     } else {
       letter.classList.add("pending");
-      letter.textContent = current;
+      letter.textContent = showCh;
       if (i === typedBuffer.length) {
         letter.classList.add("next");
       }
@@ -510,25 +512,27 @@ function renderCurrentPinyin(container, expectedRaw, typedBuffer) {
 }
 
 /** 已完成的字含错键：逐字母对错着色；快照短于音节时剩余字母按绿色展示 */
-function renderFailedPinyin(container, expectedRaw, failTyped) {
+function renderFailedPinyin(container, expectedRaw, failTyped, pinyinWithTone) {
   const expected = expectedRaw || "";
+  const display = pinyinDisplayLetters(pinyinWithTone || "");
   container.textContent = "";
   for (let i = 0; i < expected.length; i += 1) {
     const letter = document.createElement("span");
     letter.className = "py-letter";
+    const showCh = display[i] ?? expected[i];
     if (i < failTyped.length) {
       const t = failTyped[i];
       const e = expected[i];
       if (t === e) {
         letter.classList.add("ok");
-        letter.textContent = e;
+        letter.textContent = showCh;
       } else {
         letter.classList.add("err");
         letter.textContent = t;
       }
     } else {
       letter.classList.add("ok");
-      letter.textContent = expected[i];
+      letter.textContent = showCh;
     }
     container.appendChild(letter);
   }
