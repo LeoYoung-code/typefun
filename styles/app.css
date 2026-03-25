@@ -232,6 +232,15 @@ body {
   color: #e3e8f8;
 }
 
+/* 焦点横线只保留在 .py-letter.next；不要画在汉字或整格拼音上 */
+.hz-cell.current {
+  border-bottom: none;
+}
+
+.py-cell.current:has(.py-letter) {
+  border-bottom: none;
+}
+
 .error {
   color: var(--err);
   background: rgba(240, 109, 127, 0.14);
