@@ -2,3 +2,4 @@ export * from "./types.js";
 export * from "./pinyin.js";
 export * from "./stats.js";
 export * from "./engine.js";
+export * from "./completed-hanzi.js";

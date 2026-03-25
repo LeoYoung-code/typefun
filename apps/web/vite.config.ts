@@ -8,6 +8,9 @@ export default defineConfig({
     alias: {
       "@typefun/typing-core": fileURLToPath(
         new URL("../../packages/typing-core/src/index.ts", import.meta.url)
+      ),
+      "@typefun/speech-queue": fileURLToPath(
+        new URL("../../packages/speech-queue/src/index.ts", import.meta.url)
       )
     }
   },

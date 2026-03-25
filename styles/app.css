@@ -335,6 +335,22 @@ body {
   pointer-events: none;
 }
 
+.speech-hint {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--err);
+}
+
+.speech-hint.hidden {
+  display: none;
+}
+
+.hint-kbd {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
 @media (max-width: 980px) {
   :root { --cell-gap: 0.24em; }
   .course-grid {

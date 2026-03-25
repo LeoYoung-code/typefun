@@ -4,6 +4,7 @@ import {
   buildProgressSnapshot,
   calcStats,
   createPracticeState,
+  extractCompletedHanzi,
   formatDuration,
   formatPercent,
   formatRate,
@@ -14,10 +15,12 @@ import {
   type PoemCategory,
   type PracticeState
 } from "@typefun/typing-core";
+import { createSpeechQueue } from "@typefun/speech-queue";
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
 import TypingPanel from "../components/TypingPanel.vue";
+import { loadSpeechEnabled, saveSpeechEnabled } from "../lib/speech-prefs";
 import { clearProgress, loadState, saveState } from "../lib/storage";
 
 const props = defineProps<{ id: string }>();
@@ -40,6 +43,10 @@ const practiceGenreLabel = computed(() => {
 const imeInput = ref<HTMLInputElement | null>(null);
 const composing = ref(false);
 
+const speech = ref<ReturnType<typeof createSpeechQueue> | null>(null);
+const speechEnabled = ref(loadSpeechEnabled());
+const speechUnsupported = ref(false);
+
 let statsTimer: ReturnType<typeof setInterval> | null = null;
 const displayNow = ref(Date.now());
 
@@ -52,6 +59,8 @@ function focusInput() {
 }
 
 async function loadPoem() {
+  speech.value?.cancel();
+  speechUnsupported.value = false;
   loadError.value = null;
   poem.value = null;
   practice.value = null;
@@ -104,20 +113,23 @@ function onKey(ev: KeyboardEvent) {
     if (!practice.value) return;
     ev.preventDefault();
     stopStatsTimer();
+    speech.value?.cancel();
     router.push("/");
     return;
   }
   if (!practice.value) return;
   if (ev.key === "Backspace") {
     ev.preventDefault();
+    const prev = practice.value;
     practice.value = applyPracticeKey(practice.value, "backspace", Date.now());
-    afterInput();
+    afterInput(prev);
     return;
   }
   if (/^[a-zA-Z]$/.test(ev.key)) {
     ev.preventDefault();
+    const prev = practice.value;
     practice.value = applyPracticeKey(practice.value, ev.key, Date.now());
-    afterInput();
+    afterInput(prev);
   }
 }
 
@@ -142,14 +154,19 @@ function onImeInput(ev: Event) {
   const text = el.value;
   if (!text) return;
   for (const ch of text) {
+    const prev = practice.value;
     practice.value = applyPracticeKey(practice.value, ch, Date.now());
-    afterInput();
+    afterInput(prev);
   }
   el.value = "";
 }
 
-function afterInput() {
+function afterInput(prev: PracticeState | null) {
   if (!practice.value) return;
+  if (prev && speech.value?.getEnabled()) {
+    const ch = extractCompletedHanzi(prev, practice.value);
+    if (ch) speech.value.enqueue(ch);
+  }
   persistProgress();
   const tc = totalChars(practice.value);
   if (isPracticeComplete(practice.value)) {
@@ -157,9 +174,17 @@ function afterInput() {
   }
 }
 
+function toggleSpeech() {
+  speechEnabled.value = !speechEnabled.value;
+  saveSpeechEnabled(speechEnabled.value);
+  speech.value?.setEnabled(speechEnabled.value);
+  if (speechEnabled.value) speechUnsupported.value = false;
+}
+
 function finishPractice(tc: number) {
   if (!practice.value || !poem.value) return;
   stopStatsTimer();
+  speech.value?.cancel();
   const now = Date.now();
   const stats = calcStats(practice.value.metrics, tc, now);
   const stars = scoreToStars(stats.accuracy, stats.cpm);
@@ -183,11 +208,13 @@ function finishPractice(tc: number) {
 
 function goCourse() {
   stopStatsTimer();
+  speech.value?.cancel();
   router.push("/");
 }
 
 function restart() {
   if (!poem.value) return;
+  speech.value?.cancel();
   clearProgress(poem.value.id);
   saved.value = loadState();
   practice.value = createPracticeState(poem.value, null, Date.now());
@@ -224,6 +251,12 @@ watch(
 );
 
 onMounted(() => {
+  speech.value = createSpeechQueue({
+    onUnsupported: () => {
+      speechUnsupported.value = true;
+    }
+  });
+  speech.value.setEnabled(speechEnabled.value);
   loadPoem();
   window.addEventListener("keydown", onWindowKey);
   window.addEventListener("keydown", onKey);
@@ -233,6 +266,8 @@ onUnmounted(() => {
   stopStatsTimer();
   window.removeEventListener("keydown", onWindowKey);
   window.removeEventListener("keydown", onKey);
+  speech.value?.destroy();
+  speech.value = null;
 });
 
 watch(
@@ -250,6 +285,15 @@ watch(
       <div class="top-actions">
         <button type="button" class="ghost-btn" @click="goCourse">课程页</button>
         <button type="button" class="ghost-btn" @click="restart">重打</button>
+        <button
+          type="button"
+          class="ghost-btn"
+          :aria-pressed="speechEnabled"
+          aria-label="朗读开关"
+          @click="toggleSpeech"
+        >
+          {{ speechEnabled ? "朗读：开" : "朗读：关" }}
+        </button>
       </div>
     </header>
 
@@ -284,7 +328,12 @@ watch(
         <span>正确打字速度 <b>{{ statsDisplay.correctCpm }}</b></span>
         <span>进度 <b>{{ statsDisplay.progress }}</b></span>
       </div>
-      <p class="hint-kbd">练习时按 Esc 返回课程；使用键盘输入拼音。</p>
+      <p v-if="speechUnsupported" class="speech-hint" role="status">
+        当前环境不支持朗读（浏览器或系统未提供语音合成）。
+      </p>
+      <p class="hint-kbd">
+        练习时按 Esc 返回课程；使用键盘输入拼音。开启顶栏「朗读」可听字音（默认关）。
+      </p>
 
       <input
         ref="imeInput"

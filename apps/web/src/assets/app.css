@@ -104,6 +104,12 @@ body {
   color: var(--muted);
 }
 
+.speech-hint {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--err);
+}
+
 .continue-box {
   border: 1px solid var(--line);
   border-radius: 12px;

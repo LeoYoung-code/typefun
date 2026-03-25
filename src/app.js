@@ -1,5 +1,8 @@
+import { extractCompletedHanzi } from "../packages/typing-core/dist/index.js";
+import { createSpeechQueue } from "../packages/speech-queue/dist/index.js";
 import { poems } from "../data/poems.js";
 import { flattenPoem, pinyinDisplayLetters } from "./pinyin.js";
+import { loadSpeechEnabled, saveSpeechEnabled } from "./speech-prefs.js";
 import { calcStats, formatDuration, formatPercent, formatRate } from "./stats.js";
 import { loadState, saveState, clearProgress } from "./storage.js";
 
@@ -33,7 +36,9 @@ const els = {
   finishDialog: document.getElementById("finish-dialog"),
   finishDialogSummary: document.getElementById("finish-dialog-summary"),
   finishDialogStars: document.getElementById("finish-dialog-stars"),
-  finishDialogClose: document.getElementById("finish-dialog-close")
+  finishDialogClose: document.getElementById("finish-dialog-close"),
+  btnSpeech: document.getElementById("btn-speech"),
+  speechHint: document.getElementById("speech-hint")
 };
 
 const state = {
@@ -55,9 +60,40 @@ const state = {
   timer: null
 };
 
+let speech = null;
+let speechEnabled = loadSpeechEnabled();
+
 init();
 
+function initSpeech() {
+  speech = createSpeechQueue({
+    onUnsupported: () => {
+      if (els.speechHint) {
+        els.speechHint.textContent = "当前环境不支持朗读（浏览器或系统未提供语音合成）。";
+        els.speechHint.classList.remove("hidden");
+      }
+    }
+  });
+  speech.setEnabled(speechEnabled);
+  updateSpeechButton();
+}
+
+function updateSpeechButton() {
+  if (!els.btnSpeech) return;
+  els.btnSpeech.setAttribute("aria-pressed", speechEnabled ? "true" : "false");
+  els.btnSpeech.textContent = speechEnabled ? "朗读：开" : "朗读：关";
+}
+
+function practiceSnapshot() {
+  return {
+    cursor: state.cursor,
+    metrics: { correctCharCount: state.metrics.correctCharCount },
+    units: state.units
+  };
+}
+
 function init() {
+  initSpeech();
   bindEvents();
   renderCourse();
   showContinueIfAny();
@@ -84,6 +120,18 @@ function bindEvents() {
     els.finishDialog.close();
   });
 
+  if (els.btnSpeech) {
+    els.btnSpeech.addEventListener("click", () => {
+      speechEnabled = !speechEnabled;
+      saveSpeechEnabled(speechEnabled);
+      speech?.setEnabled(speechEnabled);
+      updateSpeechButton();
+      if (speechEnabled && els.speechHint) {
+        els.speechHint.classList.add("hidden");
+      }
+    });
+  }
+
   window.addEventListener("keydown", () => {
     if (!state.currentPoem) return;
     focusInput();
@@ -93,6 +141,7 @@ function bindEvents() {
       if (!state.currentPoem) return;
       if (els.practiceView.classList.contains("hidden")) return;
       ev.preventDefault();
+      speech?.cancel();
       showCourse();
       return;
     }
@@ -130,6 +179,7 @@ function bindEvents() {
 }
 
 function showCourse() {
+  speech?.cancel();
   els.courseView.classList.remove("hidden");
   els.practiceView.classList.add("hidden");
   clearInterval(state.timer);
@@ -215,6 +265,11 @@ function showContinueIfAny() {
 }
 
 function startPractice(poemId, restore = true) {
+  speech?.cancel();
+  if (els.speechHint) {
+    els.speechHint.classList.add("hidden");
+    els.speechHint.textContent = "";
+  }
   const poem = poems.find((item) => item.id === poemId);
   if (!poem) return;
   const units = flattenPoem(poem);
@@ -260,31 +315,32 @@ function startPractice(poemId, restore = true) {
 }
 
 function processKey(char) {
+  const snapBefore = practiceSnapshot();
   const key = char.toLowerCase();
 
   if (key === "backspace") {
     if (state.typedBuffer.length > 0) {
       state.typedBuffer = state.typedBuffer.slice(0, -1);
       refreshTypingStatus();
-      afterInput();
+      afterInput(snapBefore);
     } else if (state.cursor > 0) {
       state.cursor -= 1;
       while (state.cursor > 0 && state.units[state.cursor].isPunctuation) {
         state.cursor -= 1;
       }
-      const prev = state.units[state.cursor];
-      if (prev && !prev.isPunctuation) {
+      const prevUnit = state.units[state.cursor];
+      if (prevUnit && !prevUnit.isPunctuation) {
         const prevKey = String(state.cursor);
         const failSnap = state.failedSnapshots[prevKey];
         if (failSnap !== undefined) {
           delete state.failedSnapshots[prevKey];
           state.typedBuffer = failSnap.length <= 1 ? "" : failSnap.slice(0, -1);
         } else {
-          state.typedBuffer = prev.pinyinRaw.slice(0, -1);
+          state.typedBuffer = prevUnit.pinyinRaw.slice(0, -1);
           state.metrics.correctCharCount = Math.max(0, state.metrics.correctCharCount - 1);
         }
         state.currentError = false;
-        afterInput();
+        afterInput(snapBefore);
       }
     }
     return;
@@ -326,10 +382,14 @@ function processKey(char) {
   } else {
     refreshTypingStatus();
   }
-  afterInput();
+  afterInput(snapBefore);
 }
 
-function afterInput() {
+function afterInput(snapBefore) {
+  if (speech && speechEnabled) {
+    const ch = extractCompletedHanzi(snapBefore, practiceSnapshot());
+    if (ch) speech.enqueue(ch);
+  }
   const totalChars = state.units.filter((u) => !u.isPunctuation).length;
   renderTypingPanel();
   renderStats();
@@ -346,6 +406,7 @@ function skipPunctuation() {
 }
 
 function finishPoem(totalChars) {
+  speech?.cancel();
   clearInterval(state.timer);
   state.timer = null;
   const stats = calcStats(state.metrics, totalChars);
