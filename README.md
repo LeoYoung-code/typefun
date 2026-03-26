@@ -14,7 +14,7 @@
 - **`packages/typing-core`**：拼音规范化、`flattenPoem`、练习状态机（`applyPracticeKey`）、统计与星级、`extractCompletedHanzi`；**Vitest** 单测。  
 - **`packages/speech-queue`**：浏览器 Web Speech 朗读队列（完成序 FIFO、积压合并与截断）；**Vitest** 单测。  
 - **`packages/key-sounds`**：Web Audio 机械键盘音效（manifest + 多音色随机采样）；**Vitest** 单测。  
-- **`apps/api`**：Fastify，`GET /api/health`、`/api/poems`、`/api/poems/:id`，数据来自 `data/poems.json`。  
+- **`apps/api`**：Fastify，`GET /api/health`、`GET /api/poems`（分页）、`GET /api/poems/random`、`GET /api/poems/:id`。若存在 `data/corpus/index.json` 则从分片语料库读；否则回退 `data/poems.json`。  
 - **`apps/web`**：Vue 3 + Vue Router + Vite，开发时代理 `/api` → `127.0.0.1:8787`。完成结算经 `sessionStorage` 回到首页弹窗（避免路由卸载丢 `<dialog>`）。
 
 ### 前置
@@ -35,7 +35,11 @@ pnpm test         # typing-core + speech-queue + key-sounds + apps/api
 
 ### 数据说明
 
-- `data/poems.json` 与 `data/poems.js` 当前内容一致；静态 MVP 仍读 `.js`，全栈读 `.json`。后续可改为代码生成或单一数据源。
+- `data/poems.json` 与 `data/poems.js` 当前内容一致；静态 MVP 仍读 `.js`，全栈优先读 **`data/corpus/`**（由脚本从 `poems.json` 生成或自 chinese-poetry 全量导入）。
+- **生成小样本语料（默认与 CI 一致）：** `pnpm run corpus:seed` → 写入 `data/corpus/`。
+- **导入全唐诗 + 全宋词（体积大、耗时长）：** 先 `git clone https://github.com/chinese-poetry/chinese-poetry.git vendor/chinese-poetry`，再执行 `pnpm run corpus:import`（依赖 `pinyin-pro` 逐字注音）。完成后可酌情将 `data/corpus/` 加入 `.gitignore` 或仅本地保留；仓库内保留 seed 版语料即可跑通测试与首页。
+- **限量导入（例如 300 首，唐诗/宋词各约一半）：** `pnpm run corpus:import-300`（等价于 `--full --max=300`）。
+- 查询参数：`GET /api/poems?category=tang|song_ci|all&page=1&pageSize=24`；`GET /api/poems/random?category=all` 用于首页「随机一首」。
 
 ## 文档
 

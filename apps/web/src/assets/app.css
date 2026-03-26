@@ -131,6 +131,39 @@ body {
   letter-spacing: 0.04em;
 }
 
+.featured-poem {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 20px;
+  background: var(--card);
+  margin-bottom: 22px;
+}
+
+.featured-title {
+  margin: 0 0 6px;
+  font-size: 26px;
+  font-weight: 600;
+}
+
+.featured-author {
+  margin: 0 0 14px;
+  color: var(--muted);
+}
+
+.section-pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  justify-content: center;
+}
+
+.pager-meta {
+  font-size: 14px;
+  color: var(--muted);
+}
+
 .hint-kbd {
   margin-top: 8px;
   font-size: 13px;

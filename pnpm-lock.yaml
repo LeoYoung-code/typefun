@@ -6,13 +6,20 @@ settings:
 
 importers:
 
-  .: {}
+  .:
+    devDependencies:
+      pinyin-pro:
+        specifier: ^3.26.0
+        version: 3.28.0
 
   apps/api:
     dependencies:
       '@fastify/cors':
         specifier: ^10.0.2
         version: 10.1.0
+      '@typefun/typing-core':
+        specifier: workspace:*
+        version: link:../../packages/typing-core
       fastify:
         specifier: ^5.2.1
         version: 5.8.4
@@ -841,6 +848,9 @@ packages:
   pino@10.3.1:
     resolution: {integrity: sha512-r34yH/GlQpKZbU1BvFFqOjhISRo1MNx1tWYsYvmj6KIRHSPMT2+yHOEb1SG6NMvRoHRF0a07kCOox/9yakl1vg==}
     hasBin: true
+
+  pinyin-pro@3.28.0:
+    resolution: {integrity: sha512-mMRty6RisoyYNphJrTo3pnvp3w8OMZBrXm9YSWkxhAfxKj1KZk2y8T2PDIZlDDRsvZ0No+Hz6FI4sZpA6Ey25g==}
 
   postcss@8.5.8:
     resolution: {integrity: sha512-OW/rX8O/jXnm82Ey1k44pObPtdblfiuWnrd8X7GJ7emImCOstunGbXUpp7HdBrFQX6rJzn3sPT397Wp5aCwCHg==}
@@ -1689,6 +1699,8 @@ snapshots:
       safe-stable-stringify: 2.5.0
       sonic-boom: 4.2.1
       thread-stream: 4.0.0
+
+  pinyin-pro@3.28.0: {}
 
   postcss@8.5.8:
     dependencies:

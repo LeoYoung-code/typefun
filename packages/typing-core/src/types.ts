@@ -11,6 +11,16 @@ export const POEM_CATEGORY_LABELS: Record<PoemCategory, string> = {
   song_ci: "宋词"
 };
 
+/** 列表分页用（无正文），与 API `GET /api/poems` 条目一致 */
+export type PoemListItem = {
+  id: string;
+  title: string;
+  author: string;
+  category?: PoemCategory;
+  stars?: number;
+  unlocked?: boolean;
+};
+
 export type Poem = {
   id: string;
   title: string;
