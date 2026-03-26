@@ -1,7 +1,7 @@
 # Typefun 技术设计（Vue 3 + Node.js）
 
 > 依据：`docs/Typefun-gemini.pdf`（数字化古典文学教育平台技术构建与工程化演进）  
-> 对照实现：当前仓库 MVP（纯静态 HTML/ESM + `localStorage`）  
+> 对照实现：当前仓库 Vue + Node MVS  
 > 目标：在**不推翻产品心智**的前提下，给出可落地的全栈演进蓝图，前端统一为 **Vue 3**，服务端为 **Node.js（TypeScript）**。
 
 ---
@@ -26,7 +26,7 @@
 ### 2.1 已有代码可复用部分
 
 - **数据形状**：`data/poems.js` 的 `lines[].hanzi` / `pinyin` 可直接作为 API DTO 与 `typing-core` 输入。
-- **算法**：`src/pinyin.js`（声调剥离、`flattenPoem`）、`src/stats.js`（CPM/准确率）、`src/app.js` 中的 **`processKey` 状态机** — 应迁移为 **纯函数 + 不可变状态更新**，便于单测。
+- **算法**：`packages/typing-core` 中的 **`processKey` 状态机** — 纯函数 + 不可变状态更新，便于单测。
 
 ### 2.2 最小可用全栈（MVS）定义
 
@@ -405,7 +405,7 @@ USER FLOW (Playwright) [→E2E]
 ### 13.11 设计向「已有可复用」
 
 - `index.html` 信息结构（顶栏 / 两视图 / dialog / 隐藏 input）。  
-- `styles/app.css`：间距、字号阶梯、`.done` / `.current` / `.error` 语义。  
+- `apps/web/src/assets/`：间距、字号阶梯、`.done` / `.current` / `.error` 语义。  
 - 交互心智：**拼音轨为主、IME 合成门禁** — Vue 复刻时禁止改为「按汉字判题」。
 
 ---
@@ -450,14 +450,14 @@ USER FLOW (Playwright) [→E2E]
 ### 15.1 前提挑战（0A 摘要）
 
 - **要解决的问题：** 长期自用背诗打字工具可持续维护、可测、可演进全栈。  
-- **不做会怎样：** 静态 MVP 足够自用，但难以沉淀共享领域逻辑与 API 扩展。  
+- **不做会怎样：** 现有代码难以沉淀共享领域逻辑与 API 扩展。  
 - **是否代理问题：** 否；直接对齐「自用 + 工程化」目标。
 
 ### 15.2 实现路径对比（0C-bis）
 
 | 方案 | 摘要 | 取舍 |
 |------|------|------|
-| **A. 最小** | 仅保留静态 `index.html`，不引入构建 | 零运维；与 `technical-design` 不一致 |
+| **A. 最小** | 纯客户端 Vue SPA，无后端 | 零运维；缺乏 API 扩展能力 |
 | **B. MVS（已选）** | pnpm monorepo + `typing-core` + Fastify 诗词 API + Vue 练习壳 | 与设计文档 Phase 1 一致；可增量接 PG/Redis |
 | **C. 理想全量** | 一期上 PG + 账号 + PWA | 自用场景运维过重；推迟到 Phase 2 |
 

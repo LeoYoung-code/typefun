@@ -4,9 +4,7 @@
 
 ## 项目概述
 
-Typefun 是一个中文诗词打字练习应用，包含两种实现方式：
-- **静态 MVP**: `index.html` + `src/*.js`（独立运行，无需构建）
-- **Vue + Node MVS**: 位于 `apps/` + `packages/` 的 pnpm monorepo（当前 active 开发）
+Typefun 是一个中文诗词打字练习应用，基于 Vue + Node MVS 架构（pnpm monorepo）。
 
 ## 常用命令
 
@@ -29,12 +27,6 @@ pnpm --filter @typefun/typing-core test:watch  # 监听模式
 pnpm run corpus:seed      # 生成小样本语料（默认，CI 使用）
 pnpm run corpus:import     # 导入完整唐诗/宋词（需 vendor/chinese-poetry）
 pnpm run corpus:import-300 # 限制导入 300 首
-```
-
-**静态 MVP（根目录）:**
-```bash
-pnpm run build:libs && python3 -m http.server 4173
-# 打开 http://127.0.0.1:4173/index.html
 ```
 
 ## 架构
@@ -71,7 +63,7 @@ apps/
 
 ### 关键实现细节
 
-- **IME 处理**: 隐藏 `<input>` + `compositionstart`/`compositionend` + `isComposing` 门禁（与 MVP 策略相同）
+- **IME 处理**: 隐藏 `<input>` + `compositionstart`/`compositionend` + `isComposing` 门禁
 - **性能**: CharacterCell 组件使用 `v-memo` 避免 O(N) 重渲染
 - **状态机**: `reduce(state, event) => state` 模式（无 class 单例）
 - **API 代理**: Vite 开发服务器将 `/api/*` 代理到 `127.0.0.1:8787`
@@ -87,4 +79,3 @@ apps/
 - `packages/typing-core/src/engine.ts` — 核心打字状态机
 - `apps/api/src/app.ts` — Fastify 路由定义
 - `apps/web/src/views/PracticeView.vue` — 主打字界面
-- `src/app.js` — 静态 MVP 实现（参考）
