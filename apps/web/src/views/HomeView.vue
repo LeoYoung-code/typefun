@@ -23,7 +23,7 @@ const tangPage = ref<PageResponse | null>(null);
 const songPage = ref<PageResponse | null>(null);
 const tangPageNum = ref(1);
 const songPageNum = ref(1);
-const pageSize = 24;
+const pageSize = 6;
 
 const finishDialog = ref<HTMLDialogElement | null>(null);
 const finishSummary = ref("");

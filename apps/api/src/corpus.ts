@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -169,9 +169,42 @@ export class PoemRepository {
   }
 }
 
-let repoSingleton: PoemRepository | null = null;
+type RepoCache = {
+  repo: PoemRepository;
+  /** 使用语料库索引时的 mtime；否则为 null */
+  corpusMtime: number | null;
+  /** 回退 poems.json 时的 mtime；否则为 null */
+  legacyMtime: number | null;
+};
 
+let repoCache: RepoCache | null = null;
+
+function currentSourceMtime(): { corpusMtime: number | null; legacyMtime: number | null } {
+  if (existsSync(corpusIndexPath)) {
+    return { corpusMtime: statSync(corpusIndexPath).mtimeMs, legacyMtime: null };
+  }
+  return {
+    corpusMtime: null,
+    legacyMtime: statSync(legacyPoemsPath).mtimeMs
+  };
+}
+
+/**
+ * 每次请求前对比数据文件 mtime，语料更新后无需重启 API（tsx watch 重编译仍会换进程，但手工改 corpus 时常遇单例陈旧）。
+ */
 export function getPoemRepository(): PoemRepository {
-  if (!repoSingleton) repoSingleton = new PoemRepository();
-  return repoSingleton;
+  const { corpusMtime, legacyMtime } = currentSourceMtime();
+  if (
+    !repoCache ||
+    repoCache.corpusMtime !== corpusMtime ||
+    repoCache.legacyMtime !== legacyMtime
+  ) {
+    shardCache.clear();
+    repoCache = {
+      repo: new PoemRepository(),
+      corpusMtime,
+      legacyMtime
+    };
+  }
+  return repoCache.repo;
 }
