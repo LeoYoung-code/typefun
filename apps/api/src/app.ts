@@ -1,5 +1,7 @@
 import cors from "@fastify/cors";
+import fastifyStatic from "@fastify/static";
 import Fastify, { type FastifyInstance } from "fastify";
+import path from "node:path";
 
 import { getPoemRepository } from "./corpus.js";
 
@@ -96,6 +98,26 @@ export async function buildApp(
       return reply.code(500).send({ error: "failed_to_load_poem" });
     }
   });
+
+  const staticRoot = process.env.STATIC_ROOT?.trim();
+  if (staticRoot) {
+    const root = path.resolve(staticRoot);
+    await app.register(fastifyStatic, {
+      root,
+      prefix: "/",
+      decorateReply: true
+    });
+    app.setNotFoundHandler((request, reply) => {
+      if (request.method !== "GET" && request.method !== "HEAD") {
+        return reply.code(404).send({ error: "not_found" });
+      }
+      const pathname = request.url.split("?")[0] ?? "";
+      if (pathname.startsWith("/api")) {
+        return reply.code(404).send({ error: "not_found" });
+      }
+      return reply.sendFile("index.html");
+    });
+  }
 
   return app;
 }

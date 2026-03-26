@@ -26,6 +26,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
 import TypingPanel from "../components/TypingPanel.vue";
+import { apiUrl } from "../lib/apiUrl";
 import { createKeySoundEngine } from "@typefun/key-sounds";
 import {
   loadKeySoundEnabled,
@@ -132,7 +133,9 @@ async function loadPoem() {
   poem.value = null;
   practice.value = null;
   try {
-    const res = await fetch(`/api/poems/${encodeURIComponent(props.id)}`);
+    const res = await fetch(
+      apiUrl(`/api/poems/${encodeURIComponent(props.id)}`)
+    );
     if (res.status === 404) {
       loadError.value = "未找到该篇";
       return;
