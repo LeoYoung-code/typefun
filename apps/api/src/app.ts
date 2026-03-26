@@ -7,10 +7,13 @@ export type BuildAppOptions = {
   logger?: boolean;
 };
 
+const SEARCH_Q_MAX_LEN = 64;
+
 function parseListQuery(q: Record<string, string | undefined>): {
   page: number;
   pageSize: number;
   category: "all" | "tang" | "song_ci";
+  searchQuery: string | undefined;
 } {
   const page = Math.max(1, Number.parseInt(q.page ?? "1", 10) || 1);
   const pageSize = Math.min(
@@ -20,7 +23,12 @@ function parseListQuery(q: Record<string, string | undefined>): {
   const catRaw = q.category ?? "all";
   const category =
     catRaw === "tang" || catRaw === "song_ci" ? catRaw : "all";
-  return { page, pageSize, category };
+  const trimmed = (q.q ?? "").trim();
+  const searchQuery =
+    trimmed.length === 0
+      ? undefined
+      : trimmed.slice(0, SEARCH_Q_MAX_LEN);
+  return { page, pageSize, category, searchQuery };
 }
 
 function parseRandomQuery(q: Record<string, string | undefined>): {
@@ -46,9 +54,9 @@ export async function buildApp(
   app.get("/api/poems", async (req, reply) => {
     try {
       const q = req.query as Record<string, string | undefined>;
-      const { page, pageSize, category } = parseListQuery(q);
+      const { page, pageSize, category, searchQuery } = parseListQuery(q);
       const repo = getPoemRepository();
-      return repo.listPage(page, pageSize, category);
+      return repo.listPage(page, pageSize, category, searchQuery);
     } catch (err) {
       app.log.error(err);
       return reply.code(500).send({ error: "failed_to_list_poems" });

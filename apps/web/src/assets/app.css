@@ -115,6 +115,55 @@ body {
   color: var(--muted);
 }
 
+.poem-search-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.poem-search-input {
+  flex: 1;
+  min-width: min(100%, 220px);
+  border: 1px solid var(--line);
+  color: var(--text);
+  background: var(--bg-2);
+  padding: 10px 14px;
+  border-radius: 10px;
+  min-height: 44px;
+  font: inherit;
+}
+
+.poem-search-input::placeholder {
+  color: var(--muted);
+  opacity: 0.85;
+}
+
+.poem-search-input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.search-category-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.search-cat-btn.active {
+  background: #1b2653;
+  border-color: #36498e;
+}
+
+.search-loading,
+.search-empty {
+  color: var(--muted);
+  font-size: 15px;
+  margin: 0 0 12px;
+}
+
 .poem-section {
   margin-bottom: 28px;
 }
@@ -217,6 +266,15 @@ body {
   display: flex;
   justify-content: space-between;
   color: var(--muted);
+}
+
+.course-card-stars {
+  min-height: 1.25em;
+}
+
+.course-card-stars--empty {
+  font-size: 13px;
+  letter-spacing: 0.02em;
 }
 
 .course-card-title {

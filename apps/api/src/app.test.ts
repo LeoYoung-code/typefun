@@ -39,6 +39,63 @@ describe("API", () => {
     expect(body.page).toBe(1);
   });
 
+  it("GET /api/poems?q= filters by title or author", async () => {
+    const baseline = await app.inject({
+      method: "GET",
+      url: "/api/poems?page=1&pageSize=1&category=all"
+    });
+    expect(baseline.statusCode).toBe(200);
+    const baseTotal = (
+      JSON.parse(baseline.body) as { total: number }
+    ).total;
+    expect(baseTotal).toBeGreaterThan(0);
+
+    const res = await app.inject({
+      method: "GET",
+      url: `/api/poems?page=1&pageSize=50&category=all&q=${encodeURIComponent("李白")}`
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body) as {
+      items: { title: string; author: string }[];
+      total: number;
+    };
+    expect(body.total).toBeGreaterThan(0);
+    expect(body.total).toBeLessThanOrEqual(baseTotal);
+    for (const item of body.items) {
+      const hit =
+        item.title.includes("李白") || item.author.includes("李白");
+      expect(hit).toBe(true);
+    }
+  });
+
+  it("GET /api/poems?q= returns empty when no match", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: `/api/poems?page=1&pageSize=10&category=all&q=${encodeURIComponent("__no_such_poet_xyz__")}`
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body) as {
+      items: unknown[];
+      total: number;
+    };
+    expect(body.total).toBe(0);
+    expect(body.items).toEqual([]);
+  });
+
+  it("GET /api/poems?q=   (whitespace) ignores search", async () => {
+    const a = await app.inject({
+      method: "GET",
+      url: "/api/poems?page=1&pageSize=5&category=all"
+    });
+    const b = await app.inject({
+      method: "GET",
+      url: "/api/poems?page=1&pageSize=5&category=all&q=%20%20%20"
+    });
+    expect(a.statusCode).toBe(200);
+    expect(b.statusCode).toBe(200);
+    expect(JSON.parse(a.body)).toEqual(JSON.parse(b.body));
+  });
+
   it("GET /api/poems/random returns one summary", async () => {
     const res = await app.inject({
       method: "GET",
