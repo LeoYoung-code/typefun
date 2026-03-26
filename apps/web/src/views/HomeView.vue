@@ -125,15 +125,17 @@ function setSearchCategory(cat: "all" | PoemCategory) {
 const finishDialog = ref<HTMLDialogElement | null>(null);
 const finishSummary = ref("");
 const finishStars = ref("");
+const finishCategory = ref<"all" | PoemCategory>("all");
 
 function tryOpenFinishDialog() {
   const raw = sessionStorage.getItem("TYPEFUN_FINISH_V1");
   if (!raw) return;
   sessionStorage.removeItem("TYPEFUN_FINISH_V1");
   try {
-    const data = JSON.parse(raw) as { summary: string; stars: string };
+    const data = JSON.parse(raw) as { summary: string; stars: string; category?: PoemCategory };
     finishSummary.value = data.summary;
     finishStars.value = data.stars;
+    finishCategory.value = data.category ?? "all";
     void nextTick(() => finishDialog.value?.showModal());
   } catch {
     /* ignore */
@@ -142,6 +144,20 @@ function tryOpenFinishDialog() {
 
 function closeFinishDialog() {
   finishDialog.value?.close();
+}
+
+async function startNextPoem() {
+  closeFinishDialog();
+  try {
+    const res = await fetch(
+      `/api/poems/random?category=${encodeURIComponent(finishCategory.value)}`
+    );
+    if (!res.ok) return;
+    const poem = (await res.json()) as PoemListItem;
+    startPractice(poem.id);
+  } catch {
+    /* ignore */
+  }
 }
 
 async function fetchFeatured() {
@@ -326,6 +342,7 @@ const poemSections = computed(() => {
 
   <main>
     <h1 class="title">经典古诗词</h1>
+
     <p class="subtitle">唐诗与宋词 · 打开即练</p>
 
     <div v-if="loadError" class="load-error">
@@ -544,7 +561,10 @@ const poemSections = computed(() => {
       <h3 id="finish-dialog-title-home" class="finish-dialog-title">练习完成</h3>
       <p class="finish-dialog-summary">{{ finishSummary }}</p>
       <p class="finish-dialog-stars" aria-live="polite">{{ finishStars }}</p>
-      <button type="button" class="primary-btn finish-dialog-btn" @click="closeFinishDialog">
+      <button type="button" class="primary-btn finish-dialog-btn" @click="startNextPoem">
+        下一首
+      </button>
+      <button type="button" class="text-btn finish-dialog-link" @click="closeFinishDialog">
         回到课程
       </button>
     </div>

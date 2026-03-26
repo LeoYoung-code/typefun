@@ -284,7 +284,7 @@ async function finishPractice(tc: number) {
   const starsStr = `${"★".repeat(stars)}${"☆".repeat(5 - stars)}`;
   sessionStorage.setItem(
     "TYPEFUN_FINISH_V1",
-    JSON.stringify({ summary, stars: starsStr })
+    JSON.stringify({ summary, stars: starsStr, category: poem.value.category })
   );
   router.push("/");
 }

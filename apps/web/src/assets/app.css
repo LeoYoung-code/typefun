@@ -482,6 +482,24 @@ body {
   width: 100%;
 }
 
+.finish-dialog-link {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 14px;
+  text-decoration: underline;
+  cursor: pointer;
+  text-align: center;
+}
+
+.finish-dialog-link:hover {
+  color: var(--text);
+}
+
 .ime-input {
   position: fixed;
   left: -9999px;
