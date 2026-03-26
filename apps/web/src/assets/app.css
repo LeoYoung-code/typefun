@@ -9,6 +9,32 @@
   --focus: #ff80b5;
   --card: rgba(19, 27, 42, 0.72);
   --cell-gap: 0.52em;
+  /* 练习区大字：与 body 无衬线栈一致，便于「系统默认」 */
+  --display-hanzi-font: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+}
+
+html[data-display-hanzi-font="system"] {
+  --display-hanzi-font: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+}
+
+html[data-display-hanzi-font="songti"] {
+  --display-hanzi-font: "Songti SC", "SimSun", "NSimSun", "STSong", "Noto Serif SC", serif;
+}
+
+html[data-display-hanzi-font="kaiti"] {
+  --display-hanzi-font: "Kaiti SC", "KaiTi", "STKaiti", "BiauKai", "Noto Serif SC", serif;
+}
+
+html[data-display-hanzi-font="xingkai"] {
+  --display-hanzi-font: "Xingkai SC", "STXingkai", "KaiTi", "Kaiti SC", serif;
+}
+
+html[data-display-hanzi-font="fangsong"] {
+  --display-hanzi-font: "FangSong", "STFangsong", "FangSong_GB2312", "Noto Serif SC", serif;
+}
+
+html[data-display-hanzi-font="heiti"] {
+  --display-hanzi-font: "Heiti SC", "Microsoft YaHei", "SimHei", "Noto Sans SC", sans-serif;
 }
 
 * {
@@ -366,6 +392,7 @@ body {
 }
 
 .hz-cell {
+  font-family: var(--display-hanzi-font);
   font-size: 62px;
   line-height: 1.1;
   color: #9ca8c8;

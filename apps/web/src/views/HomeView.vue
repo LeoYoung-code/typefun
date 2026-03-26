@@ -11,6 +11,11 @@ import { useRouter } from "vue-router";
 import type { PoemCategory, PoemListItem } from "@typefun/typing-core";
 import { POEM_CATEGORY_LABELS, formatPercent } from "@typefun/typing-core";
 
+import {
+  DISPLAY_HANZI_FONT_OPTIONS,
+  displayHanziFont,
+  onDisplayHanziFontSelectChange
+} from "../lib/display-hanzi-font-prefs";
 import { loadState, type SavedState } from "../lib/storage";
 
 const router = useRouter();
@@ -337,7 +342,25 @@ const poemSections = computed(() => {
 <template>
   <header class="topbar">
     <RouterLink class="logo" to="/">Typefun</RouterLink>
-    <div class="top-actions" />
+    <div class="top-actions">
+      <label class="speech-voice-wrap">
+        <span class="speech-voice-label">展示字体</span>
+        <select
+          class="speech-voice-select"
+          aria-label="练习区汉字展示字体"
+          :value="displayHanziFont.id"
+          @change="onDisplayHanziFontSelectChange"
+        >
+          <option
+            v-for="opt in DISPLAY_HANZI_FONT_OPTIONS"
+            :key="opt.id"
+            :value="opt.id"
+          >
+            {{ opt.label }}
+          </option>
+        </select>
+      </label>
+    </div>
   </header>
 
   <main>

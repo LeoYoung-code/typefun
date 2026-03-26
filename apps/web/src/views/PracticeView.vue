@@ -34,6 +34,11 @@ import {
   saveKeySoundPresetId
 } from "../lib/key-sound-prefs";
 import {
+  DISPLAY_HANZI_FONT_OPTIONS,
+  displayHanziFont,
+  onDisplayHanziFontSelectChange
+} from "../lib/display-hanzi-font-prefs";
+import {
   loadSpeechEnabled,
   loadSpeechVoiceURI,
   saveSpeechEnabled,
@@ -448,6 +453,23 @@ watch(
             @change="onKeySoundPresetChange"
           >
             <option v-for="opt in keySoundPresetOptions" :key="opt.id" :value="opt.id">
+              {{ opt.label }}
+            </option>
+          </select>
+        </label>
+        <label class="speech-voice-wrap">
+          <span class="speech-voice-label">展示字体</span>
+          <select
+            class="speech-voice-select"
+            aria-label="练习区汉字展示字体"
+            :value="displayHanziFont.id"
+            @change="onDisplayHanziFontSelectChange"
+          >
+            <option
+              v-for="opt in DISPLAY_HANZI_FONT_OPTIONS"
+              :key="opt.id"
+              :value="opt.id"
+            >
               {{ opt.label }}
             </option>
           </select>
