@@ -1,0 +1,488 @@
+:root {
+  --bg: #0f1420;
+  --bg-2: #141b2b;
+  --text: #d8def0;
+  --muted: #8f97ad;
+  --line: #2d3750;
+  --ok: #39c89f;
+  --err: #f06d7f;
+  --focus: #ff80b5;
+  --card: rgba(19, 27, 42, 0.72);
+  --cell-gap: 0.52em;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: radial-gradient(circle at 20% 10%, #20293f 0%, var(--bg) 45%, #0b111c 100%);
+  color: var(--text);
+  font-family: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+}
+
+.app {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 20px 20px 30px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.logo {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.top-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.speech-voice-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.speech-voice-label {
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.speech-voice-select {
+  min-width: 0;
+  max-width: min(260px, 46vw);
+  border: 1px solid var(--line);
+  color: var(--text);
+  background: var(--bg-2);
+  padding: 8px 10px;
+  border-radius: 10px;
+  min-height: 44px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.speech-voice-select:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.ghost-btn,
+.primary-btn {
+  border: 1px solid var(--line);
+  color: var(--text);
+  background: transparent;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.primary-btn {
+  background: #1b2653;
+  border-color: #36498e;
+}
+
+.ghost-btn:focus-visible,
+.primary-btn:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.title {
+  margin: 0 0 6px;
+  font-size: 44px;
+}
+
+.subtitle {
+  margin: 0 0 22px;
+  color: var(--muted);
+}
+
+.poem-section {
+  margin-bottom: 28px;
+}
+
+.poem-section:last-child {
+  margin-bottom: 0;
+}
+
+.poem-section-title {
+  margin: 0 0 12px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+.featured-poem {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 20px;
+  background: var(--card);
+  margin-bottom: 22px;
+}
+
+.featured-title {
+  margin: 0 0 6px;
+  font-size: 26px;
+  font-weight: 600;
+}
+
+.featured-author {
+  margin: 0 0 14px;
+  color: var(--muted);
+}
+
+.section-pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  justify-content: center;
+}
+
+.pager-meta {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.hint-kbd {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.speech-hint {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--err);
+}
+
+.continue-box {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+  background: rgba(24, 33, 52, 0.72);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+  gap: 12px;
+}
+
+.continue-text {
+  color: var(--muted);
+}
+
+.course-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.course-card {
+  border: 1px solid #3a4460;
+  border-radius: 14px;
+  background: var(--card);
+  min-height: 148px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.course-card.locked {
+  opacity: 0.55;
+}
+
+.course-card-top {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+}
+
+.course-card-title {
+  font-size: 22px;
+  line-height: 1.25;
+}
+
+.course-card-author {
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.course-card button {
+  margin-top: 12px;
+}
+
+.practice-header {
+  margin: 4px 0 16px;
+}
+
+.practice-header h2 {
+  margin: 0;
+  font-size: 34px;
+}
+
+.practice-author {
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+
+.practice-genre {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.typing-panel {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(14, 21, 36, 0.75);
+  min-height: 430px;
+  padding: 24px 24px 12px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.line-block {
+  margin: 0 0 22px;
+}
+
+.line-grid {
+  display: grid;
+  justify-content: start;
+  width: max-content;
+  column-gap: var(--cell-gap);
+  row-gap: 0;
+}
+
+.line-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  /* 防止网格在窄屏下把列压到比拼音更窄导致重叠 */
+  min-width: max-content;
+}
+
+.py-cell {
+  font-family: Menlo, Monaco, Consolas, monospace;
+  font-size: 36px;
+  line-height: 1.25;
+  color: #a7b0ca;
+  min-height: 1.25em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
+  letter-spacing: 0.08em;
+  width: max-content;
+  max-width: none;
+  padding: 0 0.06em;
+}
+
+/* 逐字母着色时由 gap 控制间距，避免与 letter-spacing 叠在一起过松 */
+.py-cell:has(.py-letter) {
+  letter-spacing: 0;
+  gap: 0.14em;
+}
+
+.hz-cell {
+  font-size: 62px;
+  line-height: 1.1;
+  color: #9ca8c8;
+  min-height: 1.1em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.done {
+  color: var(--ok);
+}
+
+.current {
+  border-bottom: 3px solid var(--focus);
+  color: #e3e8f8;
+}
+
+/* 焦点横线只保留在 .py-letter.next；不要画在汉字或整格拼音上 */
+.hz-cell.current {
+  border-bottom: none;
+}
+
+.py-cell.current:has(.py-letter) {
+  border-bottom: none;
+}
+
+.error {
+  color: var(--err);
+  background: rgba(240, 109, 127, 0.14);
+}
+
+.py-letter {
+  display: inline-block;
+  min-width: 0.78em;
+  text-align: center;
+}
+
+.py-letter.ok {
+  color: var(--ok);
+}
+
+.py-letter.fixed {
+  color: #e8c547;
+}
+
+.py-letter.err {
+  color: var(--err);
+  background: rgba(240, 109, 127, 0.14);
+}
+
+.py-letter.pending {
+  color: #a7b0ca;
+}
+
+.py-letter.next {
+  border-bottom: 2px solid var(--focus);
+}
+
+.punct {
+  color: #8692b2;
+}
+
+.footer-stats {
+  margin-top: 14px;
+  border-top: 1px dashed var(--line);
+  padding-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  color: var(--muted);
+}
+
+.finish-dialog {
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--bg-2);
+  color: var(--text);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+}
+
+.finish-dialog::backdrop {
+  background: rgba(6, 10, 18, 0.72);
+  backdrop-filter: blur(4px);
+}
+
+.finish-dialog-inner {
+  padding: 22px 24px 20px;
+}
+
+.finish-dialog-title {
+  margin: 0 0 12px;
+  font-size: 22px;
+}
+
+.finish-dialog-summary {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.55;
+  white-space: pre-line;
+}
+
+.finish-dialog-stars {
+  margin: 0 0 18px;
+  font-size: 28px;
+  letter-spacing: 0.12em;
+  color: #e8c547;
+}
+
+.finish-dialog-btn {
+  width: 100%;
+}
+
+.ime-input {
+  position: fixed;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.load-error {
+  border: 1px solid var(--err);
+  border-radius: 12px;
+  padding: 16px;
+  color: var(--text);
+  background: rgba(240, 109, 127, 0.12);
+}
+
+@media (max-width: 980px) {
+  :root {
+    --cell-gap: 0.4em;
+  }
+  .course-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .py-cell {
+    font-size: 28px;
+  }
+  .hz-cell {
+    font-size: 48px;
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --cell-gap: 0.3em;
+  }
+  .title {
+    font-size: 34px;
+  }
+  .course-grid {
+    grid-template-columns: 1fr;
+  }
+  .typing-panel {
+    padding: 14px;
+  }
+  .py-cell {
+    font-size: 20px;
+  }
+  .hz-cell {
+    font-size: 34px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -45,7 +45,40 @@ body {
 
 .top-actions {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 10px;
+  justify-content: flex-end;
+}
+
+.speech-voice-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.speech-voice-label {
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.speech-voice-select {
+  min-width: 0;
+  max-width: min(260px, 46vw);
+  border: 1px solid var(--line);
+  color: var(--text);
+  background: var(--bg-2);
+  padding: 8px 10px;
+  border-radius: 10px;
+  min-height: 44px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.speech-voice-select:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 .ghost-btn,
@@ -75,6 +108,22 @@ body {
 .subtitle {
   margin: 0 0 22px;
   color: var(--muted);
+}
+
+.poem-section {
+  margin-bottom: 28px;
+}
+
+.poem-section:last-child {
+  margin-bottom: 0;
+}
+
+.poem-section-title {
+  margin: 0 0 12px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.04em;
 }
 
 .continue-box {
@@ -152,6 +201,12 @@ body {
   color: var(--muted);
 }
 
+.practice-genre {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
 .typing-panel {
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -210,6 +265,15 @@ body {
   color: #e3e8f8;
 }
 
+/* 焦点横线只保留在 .py-letter.next；不要画在汉字或整格拼音上 */
+.hz-cell.current {
+  border-bottom: none;
+}
+
+.py-cell.current:has(.py-letter) {
+  border-bottom: none;
+}
+
 .error {
   color: var(--err);
   background: rgba(240, 109, 127, 0.14);
@@ -252,6 +316,49 @@ body {
   color: var(--muted);
 }
 
+.finish-dialog {
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--bg-2);
+  color: var(--text);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+}
+
+.finish-dialog::backdrop {
+  background: rgba(6, 10, 18, 0.72);
+  backdrop-filter: blur(4px);
+}
+
+.finish-dialog-inner {
+  padding: 22px 24px 20px;
+}
+
+.finish-dialog-title {
+  margin: 0 0 12px;
+  font-size: 22px;
+}
+
+.finish-dialog-summary {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.55;
+  white-space: pre-line;
+}
+
+.finish-dialog-stars {
+  margin: 0 0 18px;
+  font-size: 28px;
+  letter-spacing: 0.12em;
+  color: #e8c547;
+}
+
+.finish-dialog-btn {
+  width: 100%;
+}
+
 .ime-input {
   position: fixed;
   left: -9999px;
@@ -259,6 +366,22 @@ body {
   height: 1px;
   opacity: 0;
   pointer-events: none;
+}
+
+.speech-hint {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--err);
+}
+
+.speech-hint.hidden {
+  display: none;
+}
+
+.hint-kbd {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--muted);
 }
 
 @media (max-width: 980px) {

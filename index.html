@@ -13,38 +13,79 @@
       <div class="top-actions">
         <button id="btn-course" class="ghost-btn">课程页</button>
         <button id="btn-restart" class="ghost-btn">重打</button>
+        <button
+          type="button"
+          id="btn-speech"
+          class="ghost-btn"
+          aria-pressed="false"
+          aria-label="朗读开关"
+        >
+          朗读：关
+        </button>
+        <label class="speech-voice-wrap" for="speech-voice">
+          <span class="speech-voice-label">音色</span>
+          <select id="speech-voice" class="speech-voice-select" aria-label="朗读音色"></select>
+        </label>
+        <button
+          type="button"
+          id="btn-key-sound"
+          class="ghost-btn"
+          aria-pressed="true"
+          aria-label="键声开关"
+        >
+          键声：开
+        </button>
+        <label class="speech-voice-wrap" for="key-sound-preset">
+          <span class="speech-voice-label">键声</span>
+          <select id="key-sound-preset" class="speech-voice-select" aria-label="键声音色"></select>
+        </label>
       </div>
     </header>
 
     <main>
       <section id="course-view" class="view">
-        <h1 class="title">经典唐诗必背</h1>
-        <p class="subtitle">长期自用 MVP · 打开即练</p>
+        <h1 class="title">经典古诗词</h1>
+        <p class="subtitle">长期自用 MVP · 唐诗与宋词 · 打开即练</p>
         <div id="continue-box" class="continue-box hidden">
           <div class="continue-text" id="continue-text"></div>
           <button id="btn-continue" class="primary-btn">继续上次练习</button>
         </div>
-        <div id="course-grid" class="course-grid"></div>
+        <div id="course-sections"></div>
       </section>
 
       <section id="practice-view" class="view hidden">
         <div class="practice-header">
           <h2 id="practice-title"></h2>
           <p id="practice-author" class="practice-author"></p>
+          <p id="practice-genre" class="practice-genre"></p>
         </div>
 
         <div id="typing-panel" class="typing-panel"></div>
 
         <div class="footer-stats">
+          <span>用时 <b id="stat-elapsed">0:00</b></span>
           <span>准确率 <b id="stat-accuracy">0%</b></span>
           <span>按键速度 <b id="stat-kpm">0 键/分钟</b></span>
           <span>打字速度 <b id="stat-cpm">0 字/分钟</b></span>
           <span>正确打字速度 <b id="stat-correct-cpm">0 字/分钟</b></span>
           <span>进度 <b id="stat-progress">0%</b></span>
         </div>
+        <p id="speech-hint" class="speech-hint hidden" role="status"></p>
+        <p class="hint-kbd">
+          练习时按 Esc 返回课程；使用键盘输入拼音。开启顶栏「朗读」可听字音（默认关）。
+        </p>
       </section>
     </main>
   </div>
+
+  <dialog id="finish-dialog" class="finish-dialog" aria-labelledby="finish-dialog-title">
+    <div class="finish-dialog-inner">
+      <h3 id="finish-dialog-title" class="finish-dialog-title">练习完成</h3>
+      <p id="finish-dialog-summary" class="finish-dialog-summary"></p>
+      <p id="finish-dialog-stars" class="finish-dialog-stars" aria-live="polite"></p>
+      <button type="button" id="finish-dialog-close" class="primary-btn finish-dialog-btn">回到课程</button>
+    </div>
+  </dialog>
 
   <input
     id="ime-input"

@@ -18,6 +18,26 @@ export function normalizePinyin(py) {
     .replace(/[^a-zv]/g, "");
 }
 
+/** 与 normalizePinyin 逐字一一对应，用于展示（保留声调）。 */
+export function pinyinDisplayLetters(py) {
+  if (!py) return [];
+  const letters = [];
+  for (const ch of py.toLowerCase()) {
+    if (TONE_MAP[ch] !== undefined) {
+      letters.push(ch);
+      continue;
+    }
+    if (/[a-z]/.test(ch)) {
+      letters.push(ch);
+    }
+  }
+  const raw = normalizePinyin(py);
+  if (letters.length !== raw.length) {
+    return [...raw];
+  }
+  return letters;
+}
+
 export function isPunctuation(char) {
   return PUNCTUATION.has(char);
 }

@@ -1,0 +1,6 @@
+node_modules/
+.tmp/
+dist/
+*.local
+.DS_Store
+vendor/chinese-poetry/

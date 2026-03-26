@@ -1,24 +1,47 @@
-# Typefun MVP
+# Typefun
 
-一个面向长期自用的古诗词打字练习网页应用 MVP。
+古诗词拼音打字练习（长期自用）。仓库内同时保留 **静态 MVP**（`index.html`）与 **设计文档中的 Vue + Node MVS**（monorepo）。
 
-## 已实现
+## 已实现（静态 MVP）
 
-- 课程页（卡片列表、锁定态、星级展示）
-- 练习页（拼音/汉字双行、当前字高亮、错误反馈）
-- 核心输入状态机（英文拼音输入 + 中文 IME 合成输入）
-- 实时统计（准确率、按键速度、打字速度、正确速度、进度）
-- 自动保存与续练（localStorage）
+- 课程页、练习页、IME 合成门禁、统计、localStorage 续练、完成 `<dialog>`  
+- 本地运行：先 `pnpm run build:libs`（生成 `typing-core` / `speech-queue` / `key-sounds` 的 `dist`），再 `python3 -m http.server 4173` → `http://127.0.0.1:4173/index.html`  
+- 键声：`public/sounds` 默认为 **CC0 实录**（Cherry KC1000 + Kenney UI），来源见 `public/sounds/LICENSES.md`。可 `pnpm run fetch:keys` 重新下载打包（需网络、`unzip`、`ffmpeg`）。无网时可 `node scripts/generate-key-sounds.mjs` 生成合成占位。  
+- 输错拼音字母时播放 `error.wav`（合成），与正确键的机械声互斥；由 `manifest.json` 的 `errorSample` 指定。
 
-## 本地运行
+## Vue + Node（Phase 1 / MVS）
 
-推荐用静态服务器打开（避免浏览器对 `file://` 模块加载限制）：
+- **`packages/typing-core`**：拼音规范化、`flattenPoem`、练习状态机（`applyPracticeKey`）、统计与星级、`extractCompletedHanzi`；**Vitest** 单测。  
+- **`packages/speech-queue`**：浏览器 Web Speech 朗读队列（完成序 FIFO、积压合并与截断）；**Vitest** 单测。  
+- **`packages/key-sounds`**：Web Audio 机械键盘音效（manifest + 多音色随机采样）；**Vitest** 单测。  
+- **`apps/api`**：Fastify，`GET /api/health`、`GET /api/poems`（分页）、`GET /api/poems/random`、`GET /api/poems/:id`。若存在 `data/corpus/index.json` 则从分片语料库读；否则回退 `data/poems.json`。  
+- **`apps/web`**：Vue 3 + Vue Router + Vite，开发时代理 `/api` → `127.0.0.1:8787`。完成结算经 `sessionStorage` 回到首页弹窗（避免路由卸载丢 `<dialog>`）。
+
+### 前置
+
+- Node **≥ 20**、[pnpm](https://pnpm.io) 9+
+
+### 命令
 
 ```bash
 cd /Users/staff/project/AI/typefun
-python3 -m http.server 4173
+pnpm install
+pnpm run build:libs   # 编译 typing-core、speech-queue、key-sounds（静态页与 Vue 均依赖）
+pnpm dev          # 并行启动 API(8787) + Web(5173)
+pnpm test         # typing-core + speech-queue + key-sounds + apps/api
 ```
 
-浏览器访问：
+浏览器打开：**http://127.0.0.1:5173/**（需 `pnpm dev` 同时起 API，否则首页会提示载入失败）。
 
-`http://127.0.0.1:4173/index.html`
+### 数据说明
+
+- `data/poems.json` 与 `data/poems.js` 当前内容一致；静态 MVP 仍读 `.js`，全栈优先读 **`data/corpus/`**（由脚本从 `poems.json` 生成或自 chinese-poetry 全量导入）。
+- **生成小样本语料（默认与 CI 一致）：** `pnpm run corpus:seed` → 写入 `data/corpus/`。
+- **导入全唐诗 + 全宋词（体积大、耗时长）：** 先 `git clone https://github.com/chinese-poetry/chinese-poetry.git vendor/chinese-poetry`，再执行 `pnpm run corpus:import`（依赖 `pinyin-pro` 逐字注音）。完成后可酌情将 `data/corpus/` 加入 `.gitignore` 或仅本地保留；仓库内保留 seed 版语料即可跑通测试与首页。
+- **限量导入（例如 300 首，唐诗/宋词各约一半）：** `pnpm run corpus:import-300`（等价于 `--full --max=300`）。
+- 查询参数：`GET /api/poems?category=tang|song_ci|all&page=1&pageSize=24`；`GET /api/poems/random?category=all` 用于首页「随机一首」。
+
+## 文档
+
+- 全栈方案与 UI 规格：`docs/technical-design-vue-node.md`  
+- 调研报告：`docs/Typefun-gemini.pdf`
