@@ -84,7 +84,8 @@ function pyLettersFailed(pinyinTone: string, expectedRaw: string, failTyped: str
       <div
         class="line-grid"
         :style="{
-          gridTemplateColumns: `repeat(${line.hanzi.length}, minmax(1.2em, max-content))`
+          /* 每列按内容撑开，避免长拼音被压窄后与相邻列叠在一起 */
+          gridTemplateColumns: `repeat(${line.hanzi.length}, max-content)`
         }"
       >
         <div

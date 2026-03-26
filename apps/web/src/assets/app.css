@@ -8,7 +8,7 @@
   --err: #f06d7f;
   --focus: #ff80b5;
   --card: rgba(19, 27, 42, 0.72);
-  --cell-gap: 0.32em;
+  --cell-gap: 0.52em;
 }
 
 * {
@@ -259,6 +259,8 @@ body {
   background: rgba(14, 21, 36, 0.75);
   min-height: 430px;
   padding: 24px 24px 12px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .line-block {
@@ -268,6 +270,7 @@ body {
 .line-grid {
   display: grid;
   justify-content: start;
+  width: max-content;
   column-gap: var(--cell-gap);
   row-gap: 0;
 }
@@ -277,6 +280,8 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
+  /* 防止网格在窄屏下把列压到比拼音更窄导致重叠 */
+  min-width: max-content;
 }
 
 .py-cell {
@@ -290,6 +295,16 @@ body {
   justify-content: center;
   text-align: center;
   white-space: nowrap;
+  letter-spacing: 0.08em;
+  width: max-content;
+  max-width: none;
+  padding: 0 0.06em;
+}
+
+/* 逐字母着色时由 gap 控制间距，避免与 letter-spacing 叠在一起过松 */
+.py-cell:has(.py-letter) {
+  letter-spacing: 0;
+  gap: 0.14em;
 }
 
 .hz-cell {
@@ -327,7 +342,7 @@ body {
 
 .py-letter {
   display: inline-block;
-  min-width: 0.62em;
+  min-width: 0.78em;
   text-align: center;
 }
 
@@ -424,7 +439,7 @@ body {
 
 @media (max-width: 980px) {
   :root {
-    --cell-gap: 0.24em;
+    --cell-gap: 0.4em;
   }
   .course-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -439,7 +454,7 @@ body {
 
 @media (max-width: 640px) {
   :root {
-    --cell-gap: 0.18em;
+    --cell-gap: 0.3em;
   }
   .title {
     font-size: 34px;

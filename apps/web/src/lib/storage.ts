@@ -44,3 +44,15 @@ export function clearProgress(poemId: string): void {
   }
   saveState(state);
 }
+
+/** 整页刷新（F5）后丢弃未完成的练习进度，下次进入从开头打。 */
+export function clearPersistedProgressOnReload(): void {
+  if (typeof performance === "undefined") return;
+  const nav = performance.getEntriesByType(
+    "navigation"
+  )[0] as PerformanceNavigationTiming | undefined;
+  if (nav?.type !== "reload") return;
+  const state = loadState();
+  state.progressByPoem = {};
+  saveState(state);
+}
