@@ -9,6 +9,8 @@ const props = defineProps<{
   typedBuffer: string;
   currentError: boolean;
   failedSnapshots: Record<string, string>;
+  /** 当前音节内曾打错过、现已打对的位置（与 engine syllableEverWrong 对齐） */
+  syllableEverWrong: boolean[];
 }>();
 
 const lineStarts = computed(() => {
@@ -21,7 +23,12 @@ const lineStarts = computed(() => {
   return starts;
 });
 
-function pyLetters(pinyinTone: string, expectedRaw: string, typedBuffer: string) {
+function pyLetters(
+  pinyinTone: string,
+  expectedRaw: string,
+  typedBuffer: string,
+  everWrong: boolean[]
+) {
   const expected = expectedRaw || "";
   const display = pinyinDisplayLetters(pinyinTone || "");
   const items: { ch: string; cls: string }[] = [];
@@ -30,10 +37,12 @@ function pyLetters(pinyinTone: string, expectedRaw: string, typedBuffer: string)
     const current = expected[i];
     const showCh = display[i] ?? current;
     if (typed !== undefined) {
-      items.push({
-        ch: typed === current ? showCh : typed,
-        cls: typed === current ? "ok" : "err"
-      });
+      if (typed !== current) {
+        items.push({ ch: typed, cls: "err" });
+      } else {
+        const wasRetried = everWrong[i] === true;
+        items.push({ ch: showCh, cls: wasRetried ? "fixed" : "ok" });
+      }
     } else {
       const cls = i === typedBuffer.length ? "pending next" : "pending";
       items.push({ ch: showCh, cls });
@@ -134,7 +143,8 @@ function pyLettersFailed(pinyinTone: string, expectedRaw: string, failTyped: str
                 v-for="(pl, pi) in pyLetters(
                   units[lineStarts[lineIndex] + idx].pinyin,
                   units[lineStarts[lineIndex] + idx].pinyinRaw,
-                  typedBuffer
+                  typedBuffer,
+                  syllableEverWrong
                 )"
                 :key="pi"
                 class="py-letter"

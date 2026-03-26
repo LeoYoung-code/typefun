@@ -350,6 +350,10 @@ body {
   color: var(--ok);
 }
 
+.py-letter.fixed {
+  color: #e8c547;
+}
+
 .py-letter.err {
   color: var(--err);
   background: rgba(240, 109, 127, 0.14);

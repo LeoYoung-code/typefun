@@ -476,6 +476,7 @@ watch(
         :typed-buffer="practice.typedBuffer"
         :current-error="practice.currentError"
         :failed-snapshots="practice.failedSnapshots"
+        :syllable-ever-wrong="practice.syllableEverWrong"
       />
 
       <div class="footer-stats" aria-live="polite">

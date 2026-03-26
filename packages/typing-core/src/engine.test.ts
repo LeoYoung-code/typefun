@@ -77,6 +77,17 @@ describe("applyPracticeKey", () => {
     expect(s.failedSnapshots["0"]).toBeUndefined();
   });
 
+  it("marks syllableEverWrong on wrong key; persists after backspace for yellow fixed styling", () => {
+    let s = createPracticeState(mini, null, 1_000_000);
+    s = applyPracticeKey(s, "x", 1_000_000);
+    expect(s.syllableEverWrong[0]).toBe(true);
+    s = applyPracticeKey(s, "backspace", 1_000_000);
+    expect(s.syllableEverWrong[0]).toBe(true);
+    s = applyPracticeKey(s, "c", 1_000_000);
+    expect(s.syllableEverWrong[0]).toBe(true);
+    expect(s.typedBuffer).toBe("c");
+  });
+
   it("stores failed snapshot when syllable completes with a wrong key", () => {
     let s = createPracticeState(mini, null, 1_000_000);
     for (const ch of "xhuang") {
@@ -107,5 +118,12 @@ describe("buildProgressSnapshot", () => {
     const p = buildProgressSnapshot(s, 20_000);
     expect(p.cursor).toBe(s.cursor);
     expect(typeof p.progress).toBe("number");
+  });
+
+  it("includes syllableEverWrong", () => {
+    let s = createPracticeState(mini, null, 10_000);
+    s = applyPracticeKey(s, "x", 10_000);
+    const p = buildProgressSnapshot(s, 20_000);
+    expect(p.syllableEverWrong?.[0]).toBe(true);
   });
 });

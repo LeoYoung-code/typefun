@@ -51,6 +51,8 @@ export type Metrics = {
 export type PracticeProgress = {
   cursor: number;
   typedBuffer: string;
+  /** 当前音节内各字母位置是否曾在本次输入中打错过（退格后重打对仍保留，用于 UI 黄色） */
+  syllableEverWrong?: boolean[];
   /** 整字已打完但含错键：unit 下标 → 该字全部按键序列（逐字母着色） */
   failedSnapshots?: Record<string, string>;
   totalKeyCount: number;
@@ -68,5 +70,7 @@ export type PracticeState = {
   typedBuffer: string;
   currentError: boolean;
   failedSnapshots: Record<string, string>;
+  /** 与 PracticeProgress.syllableEverWrong 一致，仅当前 cursor 音节有效 */
+  syllableEverWrong: boolean[];
   metrics: Metrics;
 };

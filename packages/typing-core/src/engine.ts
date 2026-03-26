@@ -60,6 +60,10 @@ export function createPracticeState(
       ? { ...restore.failedSnapshots }
       : {};
 
+  const syllableEverWrong = Array.isArray(restore?.syllableEverWrong)
+    ? [...restore.syllableEverWrong]
+    : [];
+
   let state: PracticeState = {
     poem,
     units,
@@ -67,6 +71,7 @@ export function createPracticeState(
     typedBuffer,
     currentError: false,
     failedSnapshots,
+    syllableEverWrong,
     metrics
   };
   state = refreshTypingError(state);
@@ -110,6 +115,7 @@ export function applyPracticeKey(
             cursor: newCursor,
             typedBuffer,
             failedSnapshots: nextFailed,
+            syllableEverWrong: [],
             currentError: false
           });
         }
@@ -122,6 +128,7 @@ export function applyPracticeKey(
           cursor: newCursor,
           typedBuffer,
           metrics,
+          syllableEverWrong: [],
           currentError: false
         });
       }
@@ -150,6 +157,14 @@ export function applyPracticeKey(
     ? bumpMetrics(metrics, { correctKeyCount: metrics.correctKeyCount + 1 })
     : bumpMetrics(metrics, { errorCount: metrics.errorCount + 1 });
 
+  let nextSyllableEverWrong = state.syllableEverWrong;
+  if (!keyOk) {
+    const mask = [...state.syllableEverWrong];
+    while (mask.length <= pos) mask.push(false);
+    mask[pos] = true;
+    nextSyllableEverWrong = mask;
+  }
+
   if (typedBuffer.length >= expectedRaw.length) {
     let cursor = state.cursor + 1;
     cursor = skipPunctuationUnits(state.units, cursor);
@@ -174,6 +189,7 @@ export function applyPracticeKey(
       typedBuffer: "",
       metrics: nextMetrics,
       failedSnapshots,
+      syllableEverWrong: [],
       currentError: false
     });
   }
@@ -181,7 +197,8 @@ export function applyPracticeKey(
   return refreshTypingError({
     ...state,
     typedBuffer,
-    metrics: nextMetrics
+    metrics: nextMetrics,
+    syllableEverWrong: nextSyllableEverWrong
   });
 }
 
@@ -198,6 +215,7 @@ export function buildProgressSnapshot(
   return {
     cursor: state.cursor,
     typedBuffer: state.typedBuffer,
+    syllableEverWrong: [...state.syllableEverWrong],
     failedSnapshots: { ...state.failedSnapshots },
     totalKeyCount: state.metrics.totalKeyCount,
     correctKeyCount: state.metrics.correctKeyCount,
