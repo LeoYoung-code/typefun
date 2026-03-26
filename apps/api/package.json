@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@fastify/cors": "^10.0.2",
-    "@typefun/typing-core": "workspace:*",
+    "@typefun/typing-core": "file:../../packages/typing-core",
     "fastify": "^5.2.1"
   },
   "devDependencies": {
