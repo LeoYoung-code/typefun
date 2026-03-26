@@ -86,25 +86,40 @@ export class PoemRepository {
   listPage(
     page: number,
     pageSize: number,
-    category: "all" | PoemCategory
+    category: "all" | PoemCategory,
+    searchQuery?: string
   ): PoemsPage {
     const pg = Math.max(1, page);
     const size = Math.min(100, Math.max(1, pageSize));
+    const matchesQuery = (title: string, author: string) => {
+      if (!searchQuery) return true;
+      return title.includes(searchQuery) || author.includes(searchQuery);
+    };
     if (this.mode === "legacy") {
       const list = this.legacyPoems!;
-      const filtered =
+      let filtered =
         category === "all"
           ? list
           : list.filter((p) => (p.category ?? "tang") === category);
+      if (searchQuery) {
+        filtered = filtered.filter((p) =>
+          matchesQuery(p.title, p.author)
+        );
+      }
       const total = filtered.length;
       const start = (pg - 1) * size;
       const slice = filtered.slice(start, start + size).map(toListItem);
       return { items: slice, total, page: pg, pageSize: size };
     }
-    const filtered =
+    let filtered =
       category === "all"
         ? this.entries
         : this.entries.filter((e) => e.category === category);
+    if (searchQuery) {
+      filtered = filtered.filter((e) =>
+        matchesQuery(e.title, e.author)
+      );
+    }
     const total = filtered.length;
     const start = (pg - 1) * size;
     const slice = filtered.slice(start, start + size).map((e) => ({
