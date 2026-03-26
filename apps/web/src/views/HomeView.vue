@@ -326,7 +326,7 @@ const poemSections = computed(() => {
 
   <main>
     <h1 class="title">经典古诗词</h1>
-    <p class="subtitle">Vue + Node（MVS）· 唐诗与宋词 · 打开即练</p>
+    <p class="subtitle">唐诗与宋词 · 打开即练</p>
 
     <div v-if="loadError" class="load-error">
       <p>{{ loadError }}</p>
