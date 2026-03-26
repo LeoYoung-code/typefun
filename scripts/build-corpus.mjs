@@ -4,6 +4,8 @@
  * --full     从 vendor/chinese-poetry 导入（需先 clone 仓库）
  * --max=N    与 --full 合用：最多导入 N 首（默认唐诗/宋词各约一半）
  * --vendor=  覆盖 chinese-poetry 根目录，默认 <repo>/vendor/chinese-poetry
+ *
+ * 标题、作者、正文均经 OpenCC（tw→cn）转为大陆简体后再拆字与注音。
  */
 import {
   existsSync,
@@ -16,9 +18,16 @@ import {
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { Converter } from "opencc-js/t2cn";
 import { pinyin } from "pinyin-pro";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+/** 繁体（台湾用字）→ 大陆简体，用于 vendor 与 seed 语料统一为简体展示 */
+const toSimplified = Converter({ from: "tw", to: "cn" });
+function t2s(s) {
+  return toSimplified(String(s ?? ""));
+}
 const root = join(__dirname, "..");
 const corpusDir = join(root, "data/corpus");
 const shardDir = join(corpusDir, "shards");
@@ -65,16 +74,29 @@ function paragraphsToLines(paragraphs) {
   const out = [];
   for (const p of paragraphs) {
     if (!p || !String(p).trim()) continue;
-    const pl = lineToPoemLine(String(p).trim());
+    const pl = lineToPoemLine(t2s(String(p).trim()));
     if (pl.hanzi.length) out.push(pl);
   }
   return out;
 }
 
+function normalizePoemForCorpus(poem) {
+  const lines = (poem.lines ?? [])
+    .map((line) => lineToPoemLine(t2s((line.hanzi ?? []).join(""))))
+    .filter((pl) => pl.hanzi.length);
+  return {
+    ...poem,
+    title: t2s(poem.title),
+    author: t2s(poem.author),
+    lines
+  };
+}
+
 function seedFromPoemsJson() {
-  const poems = JSON.parse(
+  const raw = JSON.parse(
     readFileSync(join(root, "data/poems.json"), "utf8")
   );
+  const poems = raw.map(normalizePoemForCorpus);
   if (existsSync(shardDir)) {
     rmSync(shardDir, { recursive: true });
   }
@@ -185,8 +207,8 @@ function importFull(vendorRoot, opts = {}) {
       const poem = {
         id,
         category: /** @type {const} */ ("tang"),
-        title: raw.title?.trim() || "无题",
-        author: `唐 · ${raw.author?.trim() || "佚名"}`,
+        title: t2s(raw.title?.trim() || "无题"),
+        author: t2s(`唐 · ${raw.author?.trim() || "佚名"}`),
         stars: 0,
         unlocked: true,
         lines
@@ -210,12 +232,12 @@ function importFull(vendorRoot, opts = {}) {
       const lines = paragraphsToLines(raw.paragraphs ?? []);
       if (!lines.length) continue;
       const id = `songci-${basename(file, ".json")}-${i}`;
-      const title = (raw.rhythmic || raw.title || "无题").trim();
+      const title = t2s((raw.rhythmic || raw.title || "无题").trim());
       const poem = {
         id,
         category: /** @type {const} */ ("song_ci"),
         title,
-        author: `宋 · ${raw.author?.trim() || "佚名"}`,
+        author: t2s(`宋 · ${raw.author?.trim() || "佚名"}`),
         stars: 0,
         unlocked: true,
         lines

@@ -15,10 +15,10 @@
     "corpus:import-300": "node scripts/build-corpus.mjs --full --max=300"
   },
   "devDependencies": {
+    "opencc-js": "^1.0.5",
     "pinyin-pro": "^3.26.0"
   },
   "engines": {
     "node": ">=20"
   }
 }
-
