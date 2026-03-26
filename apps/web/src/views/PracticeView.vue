@@ -44,6 +44,14 @@ import {
   saveSpeechEnabled,
   saveSpeechVoiceURI
 } from "../lib/speech-prefs";
+import {
+  loadTypingZoom,
+  saveTypingZoom,
+  TYPING_ZOOM_DEFAULT,
+  TYPING_ZOOM_MAX,
+  TYPING_ZOOM_MIN,
+  TYPING_ZOOM_STEP
+} from "../lib/typing-zoom-prefs";
 import { clearProgress, loadState, saveState } from "../lib/storage";
 
 const props = defineProps<{ id: string }>();
@@ -79,6 +87,32 @@ const keySoundEnabled = ref(loadKeySoundEnabled());
 const keySoundPresetId = ref(loadKeySoundPresetId() ?? "");
 const keySoundPresetOptions = ref<{ id: string; label: string }[]>([]);
 const keySoundUnsupported = ref(false);
+
+const typingZoom = ref(loadTypingZoom());
+const typingZoomPercent = computed(() => Math.round(typingZoom.value * 100));
+
+function zoomTypingIn() {
+  const v = Math.min(
+    TYPING_ZOOM_MAX,
+    Math.round((typingZoom.value + TYPING_ZOOM_STEP) * 100) / 100
+  );
+  typingZoom.value = v;
+  saveTypingZoom(v);
+}
+
+function zoomTypingOut() {
+  const v = Math.max(
+    TYPING_ZOOM_MIN,
+    Math.round((typingZoom.value - TYPING_ZOOM_STEP) * 100) / 100
+  );
+  typingZoom.value = v;
+  saveTypingZoom(v);
+}
+
+function zoomTypingReset() {
+  typingZoom.value = TYPING_ZOOM_DEFAULT;
+  saveTypingZoom(TYPING_ZOOM_DEFAULT);
+}
 
 function refreshSpeechVoiceOptions() {
   let opts = buildSpeechVoicePickerOptions(SPEECH_LANG);
@@ -491,6 +525,40 @@ watch(
         <p class="practice-genre">{{ practiceGenreLabel }}</p>
       </div>
 
+      <div class="typing-zoom-bar" role="group" aria-label="练习区字号缩放">
+        <span class="typing-zoom-label">字号</span>
+        <button
+          type="button"
+          class="typing-zoom-btn"
+          aria-label="缩小练习区"
+          :disabled="typingZoom <= TYPING_ZOOM_MIN"
+          @click="zoomTypingOut"
+        >
+          −
+        </button>
+        <span class="typing-zoom-value" aria-live="polite">{{ typingZoomPercent }}%</span>
+        <button
+          type="button"
+          class="typing-zoom-btn"
+          aria-label="放大练习区"
+          :disabled="typingZoom >= TYPING_ZOOM_MAX"
+          @click="zoomTypingIn"
+        >
+          +
+        </button>
+        <button
+          type="button"
+          class="ghost-btn typing-zoom-reset"
+          aria-label="重置字号为 100%"
+          @click="zoomTypingReset"
+        >
+          重置
+        </button>
+      </div>
+      <p class="typing-zoom-hint">
+        练习区已隐藏滚动条；内容超出时可用触控板、滚轮或触摸拖动查看，也可用「字号」整体缩小。
+      </p>
+
       <TypingPanel
         :poem="poem"
         :units="practice.units"
@@ -499,6 +567,7 @@ watch(
         :current-error="practice.currentError"
         :failed-snapshots="practice.failedSnapshots"
         :syllable-ever-wrong="practice.syllableEverWrong"
+        :zoom-scale="typingZoom"
       />
 
       <div class="footer-stats" aria-live="polite">

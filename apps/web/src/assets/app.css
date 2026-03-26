@@ -52,14 +52,18 @@ body {
 
 .app {
   max-width: 1240px;
+  width: 100%;
   margin: 0 auto;
-  padding: 20px 20px 30px;
+  padding: clamp(12px, 3vw, 20px) clamp(12px, 4vw, 22px)
+    calc(24px + env(safe-area-inset-bottom, 0px));
 }
 
 .topbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  gap: 12px 16px;
   margin-bottom: 22px;
 }
 
@@ -323,7 +327,9 @@ body {
 
 .practice-header h2 {
   margin: 0;
-  font-size: 34px;
+  font-size: clamp(1.35rem, 4.2vw, 2.125rem);
+  line-height: 1.2;
+  word-break: break-word;
 }
 
 .practice-author {
@@ -337,14 +343,84 @@ body {
   color: var(--muted);
 }
 
+.typing-zoom-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 0 0 10px;
+}
+
+.typing-zoom-label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.typing-zoom-btn {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-2);
+  color: var(--text);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 10px;
+}
+
+.typing-zoom-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.typing-zoom-btn:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.typing-zoom-value {
+  font-size: 14px;
+  color: var(--muted);
+  min-width: 3.2em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.typing-zoom-reset {
+  min-height: 44px;
+}
+
+.typing-zoom-hint {
+  margin: 0 0 14px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
 .typing-panel {
   border: 1px solid var(--line);
   border-radius: 14px;
   background: rgba(14, 21, 36, 0.75);
-  min-height: 430px;
+  min-height: min(430px, 52vh);
+  max-height: min(72vh, calc(100dvh - 200px));
   padding: 24px 24px 12px;
-  overflow-x: auto;
+  overflow: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  /* 隐藏滚动条，仍可用触控板/滚轮/拖动滚动 */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.typing-panel::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.typing-panel-zoom-root {
+  display: block;
+  width: max-content;
 }
 
 .line-block {
@@ -366,6 +442,8 @@ body {
   justify-content: flex-start;
   /* 防止网格在窄屏下把列压到比拼音更窄导致重叠 */
   min-width: max-content;
+  /* 随光标滚入视区时与面板边缘留出空隙 */
+  scroll-margin: 12px 20px;
 }
 
 .py-cell {
@@ -462,8 +540,9 @@ body {
   padding-top: 10px;
   display: flex;
   flex-wrap: wrap;
-  gap: 18px;
+  gap: clamp(10px, 2.5vw, 18px);
   color: var(--muted);
+  font-size: clamp(13px, 2.8vw, 15px);
 }
 
 .finish-dialog {
@@ -564,13 +643,39 @@ body {
     --cell-gap: 0.3em;
   }
   .title {
-    font-size: 34px;
+    font-size: clamp(1.6rem, 7vw, 2.125rem);
+  }
+  .subtitle {
+    font-size: 0.95rem;
   }
   .course-grid {
     grid-template-columns: 1fr;
   }
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .logo {
+    text-align: center;
+  }
+  .top-actions {
+    justify-content: center;
+  }
+  .speech-voice-wrap {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .speech-voice-select {
+    max-width: 100%;
+    flex: 1 1 auto;
+  }
+  .practice-header {
+    margin-bottom: 12px;
+  }
   .typing-panel {
     padding: 14px;
+    min-height: min(260px, 42vh);
+    max-height: calc(100dvh - 168px);
   }
   .py-cell {
     font-size: 20px;

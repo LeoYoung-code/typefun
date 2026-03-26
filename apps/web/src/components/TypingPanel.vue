@@ -1,17 +1,22 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { pinyinDisplayLetters, type Poem, type Unit } from "@typefun/typing-core";
 
-const props = defineProps<{
-  poem: Poem;
-  units: Unit[];
-  cursor: number;
-  typedBuffer: string;
-  currentError: boolean;
-  failedSnapshots: Record<string, string>;
-  /** 当前音节内曾打错过、现已打对的位置（与 engine syllableEverWrong 对齐） */
-  syllableEverWrong: boolean[];
-}>();
+const props = withDefaults(
+  defineProps<{
+    poem: Poem;
+    units: Unit[];
+    cursor: number;
+    typedBuffer: string;
+    currentError: boolean;
+    failedSnapshots: Record<string, string>;
+    /** 当前音节内曾打错过、现已打对的位置（与 engine syllableEverWrong 对齐） */
+    syllableEverWrong: boolean[];
+    /** 练习区内容缩放（0.5–1.5），由顶栏缩放按钮控制 */
+    zoomScale?: number;
+  }>(),
+  { zoomScale: 1 }
+);
 
 const lineStarts = computed(() => {
   const starts: number[] = [];
@@ -81,10 +86,49 @@ function pyLettersFailed(pinyinTone: string, expectedRaw: string, failTyped: str
   }
   return items;
 }
+
+const panelRef = ref<HTMLElement | null>(null);
+
+/** 完成时 cursor 可能等于 units.length，滚到最后一格 */
+function scrollTargetUnitIndex(): number {
+  if (props.units.length === 0) return 0;
+  return Math.min(props.cursor, props.units.length - 1);
+}
+
+function scrollCurrentCellIntoView(): void {
+  const idx = scrollTargetUnitIndex();
+  const root = panelRef.value;
+  if (!root) return;
+  const el = root.querySelector<HTMLElement>(`[data-unit-index="${idx}"]`);
+  if (!el) return;
+  el.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "auto" });
+}
+
+onMounted(() => {
+  void nextTick(() => scrollCurrentCellIntoView());
+});
+
+watch(
+  () => [props.cursor, props.poem.id] as const,
+  () => {
+    void nextTick(() => scrollCurrentCellIntoView());
+  }
+);
+
+watch(
+  () => props.zoomScale,
+  () => {
+    void nextTick(() => scrollCurrentCellIntoView());
+  }
+);
 </script>
 
 <template>
-  <div class="typing-panel">
+  <div ref="panelRef" class="typing-panel">
+    <div
+      class="typing-panel-zoom-root"
+      :style="{ zoom: props.zoomScale }"
+    >
     <div
       v-for="(line, lineIndex) in poem.lines"
       :key="lineIndex"
@@ -101,6 +145,7 @@ function pyLettersFailed(pinyinTone: string, expectedRaw: string, failTyped: str
           v-for="(char, idx) in line.hanzi"
           :key="`${lineIndex}-${idx}`"
           class="line-cell"
+          :data-unit-index="lineStarts[lineIndex] + idx"
         >
           <span
             class="py-cell"
@@ -175,6 +220,7 @@ function pyLettersFailed(pinyinTone: string, expectedRaw: string, failTyped: str
           >
         </div>
       </div>
+    </div>
     </div>
   </div>
 </template>
