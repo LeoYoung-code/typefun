@@ -73,10 +73,6 @@ apps/
 - Node.js **≥ 20**
 - pnpm **9+**
 
-## 生产部署
-
-- 说明与变量表见根目录 `README.md`「生产环境部署」：`Dockerfile` / `docker-compose.yml`、`vercel.json`、`VITE_API_BASE`、API 的 `HOST` / `PORT` / `STATIC_ROOT`。
-
 ## 关键文件
 
 - `docs/technical-design-vue-node.md` — 完整技术规格

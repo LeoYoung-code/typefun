@@ -11,7 +11,6 @@ import { useRouter } from "vue-router";
 import type { PoemCategory, PoemListItem } from "@typefun/typing-core";
 import { POEM_CATEGORY_LABELS, formatPercent } from "@typefun/typing-core";
 
-import { apiUrl } from "../lib/apiUrl";
 import { loadState, type SavedState } from "../lib/storage";
 
 const router = useRouter();
@@ -78,7 +77,7 @@ async function loadSearchPage(page: number) {
       category: searchCategory.value,
       q
     });
-    const res = await fetch(apiUrl(`/api/poems?${params}`), { signal });
+    const res = await fetch(`/api/poems?${params}`, { signal });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = (await res.json()) as PageResponse;
     searchPage.value = data;
@@ -151,9 +150,7 @@ async function startNextPoem() {
   closeFinishDialog();
   try {
     const res = await fetch(
-      apiUrl(
-        `/api/poems/random?category=${encodeURIComponent(finishCategory.value)}`
-      )
+      `/api/poems/random?category=${encodeURIComponent(finishCategory.value)}`
     );
     if (!res.ok) return;
     const poem = (await res.json()) as PoemListItem;
@@ -165,7 +162,7 @@ async function startNextPoem() {
 
 async function fetchFeatured() {
   try {
-    const res = await fetch(apiUrl("/api/poems/random"));
+    const res = await fetch("/api/poems/random");
     if (!res.ok) {
       featured.value = null;
       return;
@@ -181,9 +178,7 @@ async function fetchSection(
   page: number
 ): Promise<PageResponse> {
   const res = await fetch(
-    apiUrl(
-      `/api/poems?category=${category}&page=${page}&pageSize=${pageSize}`
-    )
+    `/api/poems?category=${category}&page=${page}&pageSize=${pageSize}`
   );
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return (await res.json()) as PageResponse;
@@ -248,7 +243,7 @@ watch(
       return;
     }
     try {
-      const res = await fetch(apiUrl(`/api/poems/${encodeURIComponent(id)}`));
+      const res = await fetch(`/api/poems/${encodeURIComponent(id)}`);
       if (!res.ok) {
         lastPoemMeta.value = null;
         return;

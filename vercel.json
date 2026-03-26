@@ -1,7 +1,4 @@
 {
-  "buildCommand": "pnpm install && pnpm run build",
-  "installCommand": "pnpm install",
-  "outputDirectory": "apps/web/dist",
-  "framework": null,
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "buildCommand": "pnpm run build",
+  "installCommand": "pnpm install"
 }
